@@ -43,9 +43,9 @@ class Point {
 }
 
 class Spline {
-    constructor(duration) {
+    constructor(duration, points) {
         this.duration = duration;
-        this.points = [];
+        this.points = points;
     }
 
     print() {
@@ -210,7 +210,7 @@ function main()
     gl.cullFace(gl.BACK);
 
     // Load file handler
-    document.getElementById("files").onchange = loadFile;
+    //document.getElementById("files").onchange = loadFile;
 
     // Create cubes
     colorCube();
@@ -237,6 +237,26 @@ function main()
             wing2 = newWing2;
         }
     }
+
+    let birdSpline = new Spline(10, [new Point([-7.5, 0, 0], [0, -45, 0]),
+        new Point([-5, 0, -5], [0, -90, 0]),
+        new Point([0, 0, -7.5], [0, -135, 0]),
+        new Point([5, 0, -5], [0, -180, 0]),
+        new Point([7.5, 0, 0], [0, -225, 0]),
+        new Point([5, 0, 5], [0, -270, 0]),
+        new Point([0, 0, 7.5], [0, -315, 0]),
+        new Point([-5, 0, 5], [0, -360, 0]),
+        new Point([-7.5, 0, 0], [0, -405, 0]),
+        new Point([-5, 0, -5], [0, -450, 0]),
+        new Point([0, 0, -7.5], [0, -495, 0])]);
+
+    splines.push(birdSpline);
+    t = 0;
+    currentType = 0;
+    currentSpline = 0;
+    l = 0;
+    controlPoint = 0;
+    generateSplines();
 
     vPosition = gl.getAttribLocation( program, "vPosition" );
     gl.enableVertexAttribArray( vPosition );
@@ -360,10 +380,10 @@ function drawControlPoints() {
 }
 
 // File handler
-function loadFile(evt) {
+/*function loadFile(evt) {
     let reader = readTextFile(evt);
     reader.onload = drawSpline;
-}
+}*/
 
 // Generate the splines from the file
 function drawSpline(evt) {
