@@ -254,7 +254,7 @@ function main()
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix));
 
-    cameraMatrix = lookAt(vec3(0.0, 5.0, -18.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+    cameraMatrix = lookAt(vec3(0.0, 5.0, 10.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
     let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
     gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
 
@@ -269,21 +269,21 @@ function render() {
 
     // Draw the control points as small cubes
     drawControlPoints();
-
+    if(t === 1006) {
+        t=0;
+        controlPoint=0;
+        alpha=0;
+        l=0;
+    }
     // Increment step counter
     if (catmull.length > 0) { // Switch splines
-        if (t < catmull.length-2 && Date.now() - startWait > lengthWait * 1000) { // Increment steps
+        if (t < catmull.length-2) { // Increment steps
             t += 1;
             l += 1;
             alpha += 2*Math.PI/segments;
             if (l > segments) {
                 l = 0;
                 controlPoint += 1;
-
-                if (controlPoint >= splines[currentSpline].points.length) {
-                    currentSpline += 1;
-                    controlPoint = 0;
-                }
             }
         }
 
@@ -410,8 +410,8 @@ function generateSplines() {
     bSpline = [];
     for (let i = 0; i < splines.length; i++) {
         let spline = splines[i];
-        catmull = generateCatmullRomCurve(spline.points.concat([spline.points[0], spline.points[1]]));
-        bSpline = generateBSpline(spline.points.concat([spline.points[0], spline.points[1]]));
+        catmull = generateCatmullRomCurve(spline.points/*.concat([spline.points[0], spline.points[1]])*/);
+        bSpline = generateBSpline(spline.points/*.concat([spline.points[0], spline.points[1]])*/);
     }
 
 }
