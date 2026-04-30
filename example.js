@@ -9,7 +9,6 @@ let path, path2;
 let path2Index = 0.0;
 
 let vertices;
-let weightV
 
 let controlPointBuffer;
 let numControlPoints = 0;
@@ -229,10 +228,10 @@ function angletoQuat(x, y, z) {
 	x = x * Math.PI / 180;
 	y = y * Math.PI / 180;
 	z = z * Math.PI / 180;
-	return normalize(vec4(Math.sin(x/2)*Math.cos(y/2),Math.cos(z/2)-Math.cos(x/2)*Math.sin(y/2),Math.sin(z/2),
-		Math.cos(x/2)*Math.sin(y/2),Math.cos(z/2)+Math.sin(x/2)*Math.cos(y/2),Math.sin(z/2),
-		Math.cos(x/2)*Math.cos(y/2),Math.sin(z/2)-Math.sin(x/2)*Math.sin(y/2),Math.cos(z/2),
-		Math.cos(x/2)*Math.cos(y/2),Math.cos(z/2)+Math.sin(x/2)*Math.sin(y/2),Math.sin(z/2)));
+	return vec4(Math.sin(x/2)*Math.cos(y/2)*Math.cos(z/2)-Math.cos(x/2)*Math.sin(y/2)*Math.sin(z/2),
+		Math.cos(x/2)*Math.sin(y/2)*Math.cos(z/2)+Math.sin(x/2)*Math.cos(y/2)*Math.sin(z/2),
+		Math.cos(x/2)*Math.cos(y/2)*Math.sin(z/2)-Math.sin(x/2)*Math.sin(y/2)*Math.cos(z/2),
+		Math.cos(x/2)*Math.cos(y/2)*Math.cos(z/2)+Math.sin(x/2)*Math.sin(y/2)*Math.sin(z/2));
 }
 
 
