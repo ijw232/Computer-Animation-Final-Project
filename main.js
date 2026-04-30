@@ -6,6 +6,12 @@ let wings = [];
 let body;
 let animatedArray = [];
 let colorsArray =[];
+let groundPoints = [];
+const groundColor = vec4(0.0, 0.7, 0.0, 1.0);
+const groundColors = [groundColor, groundColor, groundColor, groundColor, groundColor, groundColor];
+let roadPoints = [];
+const roadColor = vec4(0.3, 0.3, 0.3, 1.0);
+let roadColors = [];
 
 let cameraMatrix;
 let projMatrix;
@@ -15,17 +21,19 @@ let catmull = [];
 let bSpline = [];
 
 let vPosition;
+let vColor;
 let modelMatrixLoc;
 
-let segments = 125;
+const segments = 125;
 let t = 0;
 let l = 0;
 let alpha = 0;
 let currentType = 0; // 0 = Catmull, 1 = BSpline
 let controlPoint = 0;
 let currentSpline = 0;
-let numParts = 3;
-let flapAngle = 10;
+const numParts = 3;
+const flapAngle = 10;
+const groundRadius = 20;
 
 
 class Point {
@@ -157,6 +165,14 @@ function wing(a, b, c, d) {
     wings.push(wingPoints[d]);
 }
 
+function createGround() {
+    groundPoints.push(vec4(groundRadius, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius, 0.0, groundRadius, 1.0));
+}
 
 function colorCube()
 {
@@ -212,6 +228,7 @@ function main()
     // Create cubes
     colorCube();
     makeWings();
+    createGround();
 
     // Create Hierarchy
     body = new Body(mat4());
@@ -239,12 +256,7 @@ function main()
     gl.enableVertexAttribArray( vPosition );
     modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
 
-    let cBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
-
-    let vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+    vColor = gl.getAttribLocation( program, "vColor" );
     gl.enableVertexAttribArray( vColor );
 
     projMatrix = perspective(90, 1, 0.1, 100);
@@ -264,9 +276,10 @@ function main()
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
 
+    drawGround();
     // Draw the control points as small cubes
     drawControlPoints();
-    if(t === 1006) {
+    if(t >= catmull.length - 2) {
         t=0;
         controlPoint=0;
         alpha=0;
@@ -285,10 +298,7 @@ function render() {
         }
 
         // Push main cube
-        let vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(animatedArray), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+        loadVectors(animatedArray, colorsArray);
         let point;
 
         // Get correct spline points
@@ -322,6 +332,8 @@ function render() {
     requestAnimFrame(render);
 }
 
+
+
 // Used to apply kinematics recursively, direction used to determine side of body
 // for the first part of each wing which is then applied to all children.
 function drawWings(parentMatrix, wing, direction = 1) {
@@ -345,15 +357,20 @@ function drawWings(parentMatrix, wing, direction = 1) {
 
 // Draw small cubes at control points
 function drawControlPoints() {
-    let vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
-    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+    loadVectors(pointsArray, colorsArray);
 
 
     for (let i = 0; i < splines.length; i++) {
         splines[i].draw();
     }
+}
+
+function drawGround() {
+    loadVectors(groundPoints, groundColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+
+    gl.drawArrays(gl.TRIANGLES, 0, groundPoints.length)
 }
 
 // File handler
@@ -533,4 +550,18 @@ function quatToMatrix(q) {
         vec4(2.0 * (x * z - w * y),     2.0 * (y * z + w * x),     1.0 - 2.0 * (x * x + y * y), 0.0),
         vec4(0.0,                       0.0,                       0.0,                       1.0)
     );
+}
+
+function loadVectors(points, colors = null) {
+    let vBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+
+    if (colors !== null) {
+        let cBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    }
 }
