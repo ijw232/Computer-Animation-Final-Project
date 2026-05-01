@@ -21,7 +21,9 @@ const roadQuality = 50;
 const roadElevation = 0.01;
 
 let carPoints= [];
+let hoodPoints = [];
 let carColors = [];
+let hoodColors = [];
 const bodyColor = vec4(1.0, 0.0, 0.0, 1.0);
 const windowColor = vec4(0.5, 1.0, 1.0, 1.0);
 const tireColor = vec4(0.1, 0.1, 0.1, 1.0);
@@ -254,11 +256,14 @@ function createCar() {
     ];
 
     genericQuad(0, 1, 2, 3, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(0, 4, 7, 3, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(0, 4, 7, 3, carKeyPoints, bodyColor, hoodPoints, hoodColors);
     genericQuad(1, 5, 4, 0, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(0, 4, 5, 1, carKeyPoints, bodyColor, carPoints, carColors);
     genericQuad(2, 6, 5, 1, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(1, 5, 6, 2, carKeyPoints, bodyColor, carPoints, carColors);
     genericQuad(3, 7, 6, 2, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(4, 8, 11, 7, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(2, 6, 7, 3, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(4, 8, 11, 7, carKeyPoints, bodyColor, hoodPoints, hoodColors);
     genericQuad(9, 5, 6, 10, carKeyPoints, bodyColor, carPoints, carColors);
     genericQuad(8, 12, 15, 11, carKeyPoints, windowColor, carPoints, carColors);
     genericQuad(9, 13, 12, 8, carKeyPoints, windowColor, carPoints, carColors);
