@@ -6,17 +6,25 @@ let wings = [];
 let body;
 let animatedArray = [];
 let colorsArray =[];
+
 let groundPoints = [];
 const groundColor = vec4(0.0, 0.7, 0.0, 1.0);
 const groundColors = [groundColor, groundColor, groundColor, groundColor, groundColor, groundColor]
 const groundRadius = 20;
+
 let roadPoints = [];
 const roadColor = vec4(0.3, 0.3, 0.3, 1.0);
 let roadColors = [];
-const roadWidth = 3;
+const roadWidth = 4;
 const roadInnerRadius = 6;
 const roadQuality = 50;
 const roadElevation = 0.1;
+
+let carPoints= [];
+let carColors = [];
+const bodyColor = vec4(1.0, 0.0, 0.0, 1.0);
+const windowColor = vec4(0.5, 1.0, 1.0, 1.0);
+const tireColor = vec4(0.1, 0.1, 0.1, 1.0);
 
 let cameraMatrix;
 let projMatrix;
@@ -224,6 +232,37 @@ function createRoad() {
     console.log(roadPoints, roadColors);
 }
 
+function createCar() {
+    const carKeyPoints = [
+        vec4(2.0, 1.0, -1.0, 1.0),
+        vec4(-2.0, 1.0, -1.0, 1.0),
+        vec4(-2.0, 1.0, 1.0, 1.0),
+        vec4(2.0, 1.0, 1.0, 1.0)
+    ];
+
+    genericQuad(0, 1, 2, 3, carKeyPoints, bodyColor, carPoints, carColors);
+}
+
+function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray) {
+    pointArray.push(keyPoints[a]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[b]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[c]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[c]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[d]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[a]);
+    colorArray.push(color);
+}
+
 function colorCube()
 {
     quad( 1, 0, 3, 2 );
@@ -280,6 +319,7 @@ function main()
     makeWings();
     createGround();
     createRoad();
+    createCar();
 
     // Create Hierarchy
     body = new Body(mat4());
@@ -310,11 +350,11 @@ function main()
     vColor = gl.getAttribLocation( program, "vColor" );
     gl.enableVertexAttribArray( vColor );
 
-    projMatrix = perspective(90, 1, 0.1, 100);
+    projMatrix = perspective(65, 1, 0.1, 100);
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix));
 
-    cameraMatrix = lookAt(vec3(0.0, 5.0, 15.0), vec3(0.0, 3.0, 0.0), vec3(0.0, 1.0, 0.0));
+    cameraMatrix = lookAt(vec3(0.0, 10.0, 23.0), vec3(0.0, 5.0, 0.0), vec3(0.0, 1.0, 0.0));
     let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
     gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
 
@@ -329,8 +369,9 @@ function render() {
 
     drawGround();
     drawRoad();
+    drawCar();
     // Draw the control points as small cubes
-    drawControlPoints();
+    // drawControlPoints();
     if(t >= catmull.length - 2) {
         t=0;
         controlPoint=0;
@@ -430,6 +471,13 @@ function drawRoad() {
     let modelMatrix = mat4();
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
     gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
+}
+
+function drawCar() {
+    loadVectors(carPoints, carColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
 // File handler
