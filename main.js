@@ -341,17 +341,17 @@ function main()
         }
     }
 
-    let birdSpline = new Spline([new Point([-7.5, 5, 0], [0, -45, 0]),
-        new Point([-5, 5, -5], [0, -90, 0]),
-        new Point([0, 5, -7.5], [0, -135, 0]),
-        new Point([5, 5, -5], [0, -180, 0]),
-        new Point([7.5, 5, 0], [0, -225, 0]),
-        new Point([5, 5, 5], [0, -270, 0]),
-        new Point([0, 5, 7.5], [0, -315, 0]),
-        new Point([-5, 5, 5], [0, -360, 0]),
-        new Point([-7.5, 5, 0], [0, -405, 0]),
-        new Point([-5, 5, -5], [0, -450, 0]),
-        new Point([0, 5, -7.5], [0, -495, 0])]);
+    let birdSpline = new Spline([new Point([-7.5, 10, 0], [0, -45, 0]),
+        new Point([-5, 10, -5], [0, -90, 0]),
+        new Point([0, 10, -7.5], [0, -135, 0]),
+        new Point([5, 10, -5], [0, -180, 0]),
+        new Point([7.5, 10, 0], [0, -225, 0]),
+        new Point([5, 10, 5], [0, -270, 0]),
+        new Point([0, 10, 7.5], [0, -315, 0]),
+        new Point([-5, 10, 5], [0, -360, 0]),
+        new Point([-7.5, 10, 0], [0, -405, 0]),
+        new Point([-5, 10, -5], [0, -450, 0]),
+        new Point([0, 10, -7.5], [0, -495, 0])]);
 
     let carSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
         new Point([-5, 0, -5], [0, -90, 0]),
