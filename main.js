@@ -8,10 +8,15 @@ let animatedArray = [];
 let colorsArray =[];
 let groundPoints = [];
 const groundColor = vec4(0.0, 0.7, 0.0, 1.0);
-const groundColors = [groundColor, groundColor, groundColor, groundColor, groundColor, groundColor];
+const groundColors = [groundColor, groundColor, groundColor, groundColor, groundColor, groundColor]
+const groundRadius = 20;
 let roadPoints = [];
 const roadColor = vec4(0.3, 0.3, 0.3, 1.0);
 let roadColors = [];
+const roadWidth = 3;
+const roadInnerRadius = 6;
+const roadQuality = 50;
+const roadElevation = 0.1;
 
 let cameraMatrix;
 let projMatrix;
@@ -33,7 +38,6 @@ let controlPoint = 0;
 let currentSpline = 0;
 const numParts = 3;
 const flapAngle = 10;
-const groundRadius = 20;
 
 
 class Point {
@@ -174,6 +178,52 @@ function createGround() {
     groundPoints.push(vec4(groundRadius, 0.0, groundRadius, 1.0));
 }
 
+function createRoad() {
+    const degrees = 2 * Math.PI/roadQuality;
+    const shift = degrees/2;
+    const outerR = roadInnerRadius + roadWidth;
+    const innerR = roadInnerRadius;
+    for (let i = 0; i < roadQuality; i++){
+        roadPoints.push(vec4(
+            outerR*Math.cos(i * degrees - shift),
+            roadElevation,
+            outerR*Math.sin(i * degrees - shift),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            innerR*Math.cos(i * degrees),
+            roadElevation,
+            innerR*Math.sin(i * degrees),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            outerR*Math.cos((i+1) * degrees - shift),
+            roadElevation,
+            outerR*Math.sin((i+1) * degrees - shift),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            innerR*Math.cos((i+1) * degrees),
+            roadElevation,
+            innerR*Math.sin((i+1) * degrees),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            outerR*Math.cos((i+1) * degrees - shift),
+            roadElevation,
+            outerR*Math.sin((i+1) * degrees - shift),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            innerR*Math.cos(i * degrees),
+            roadElevation,
+            innerR*Math.sin(i * degrees),
+            1.0));
+        roadColors.push(roadColor);
+    }
+    console.log(roadPoints, roadColors);
+}
+
 function colorCube()
 {
     quad( 1, 0, 3, 2 );
@@ -229,6 +279,7 @@ function main()
     colorCube();
     makeWings();
     createGround();
+    createRoad();
 
     // Create Hierarchy
     body = new Body(mat4());
@@ -277,6 +328,7 @@ function render() {
     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
 
     drawGround();
+    drawRoad();
     // Draw the control points as small cubes
     drawControlPoints();
     if(t >= catmull.length - 2) {
@@ -371,6 +423,13 @@ function drawGround() {
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
 
     gl.drawArrays(gl.TRIANGLES, 0, groundPoints.length)
+}
+
+function drawRoad() {
+    loadVectors(roadPoints, roadColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
 }
 
 // File handler
