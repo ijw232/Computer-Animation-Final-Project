@@ -27,6 +27,10 @@ let currentSpline = 0;
 let numParts = 3;
 let flapAngle = 10;
 
+let carl = 0;
+let carAlpha = 0;
+let carControlPoint = 0;
+
 
 class Point {
     constructor(pos, rot) {
@@ -40,13 +44,11 @@ class Point {
 }
 
 class Spline {
-    constructor(duration, points) {
-        this.duration = duration;
+    constructor(points) {
         this.points = points;
     }
 
     print() {
-        console.log("Duration: " + this.duration);
         console.log(this.points);
     }
 
@@ -235,7 +237,7 @@ function main()
         }
     }
 
-    let birdSpline = new Spline(10, [new Point([-7.5, 0, 0], [0, -45, 0]),
+    let birdSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
         new Point([-5, 0, -5], [0, -90, 0]),
         new Point([0, 0, -7.5], [0, -135, 0]),
         new Point([5, 0, -5], [0, -180, 0]),
@@ -247,7 +249,7 @@ function main()
         new Point([-5, 0, -5], [0, -450, 0]),
         new Point([0, 0, -7.5], [0, -495, 0])]);
 
-    let carSpline = new Spline(10, [new Point([-7.5, 0, 0], [0, -45, 0]),
+    let carSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
         new Point([-5, 0, -5], [0, -90, 0]),
         new Point([0, 0, -7.5], [0, -135, 0]),
         new Point([5, 0, -5], [0, -180, 0]),
@@ -266,6 +268,8 @@ function main()
     currentSpline = 0;
     birdl = 0;
     birdControlPoint = 0;
+    carl = 0;
+    carControlPoint = 0;
     generateSplines();
 
     vPosition = gl.getAttribLocation( program, "vPosition" );
@@ -304,9 +308,15 @@ function render() {
         birdControlPoint=0;
         birdAlpha=0;
         birdl=0;
+        carControlPoint=0;
+        carAlpha=0;
+        carl=0;
     }
     if(catmull[0].length > 0) {
         drawBird();
+    }
+    if(catmull[1].length > 0) {
+        drawCar();
     }
     requestAnimFrame(render);
 }
@@ -357,6 +367,17 @@ function drawBird() {
     }
 }
 
+function drawCar() {
+    if (t < catmull[0].length-2) { // Increment steps
+        carl += 1;
+        carAlpha += 2*Math.PI/segments;
+        if (carl > segments) {
+            carl = 0;
+            carControlPoint += 1;
+        }
+    }
+}
+
 // Used to apply kinematics recursively, direction used to determine side of body
 // for the first part of each wing which is then applied to all children.
 function drawWings(parentMatrix, wing, direction = 1) {
@@ -389,51 +410,6 @@ function drawControlPoints() {
     for (let i = 0; i < splines.length; i++) {
         splines[i].draw();
     }
-}
-
-// File handler
-/*function loadFile(evt) {
-    let reader = readTextFile(evt);
-    reader.onload = drawSpline;
-}*/
-
-// Generate the splines from the file
-function drawSpline(evt) {
-    let splitString = evt.target.result.split("\n");
-    let data = [];
-
-    for (let i = 0; i < splitString.length; i++) {
-        if (splitString[i].length > 0) {
-            if (splitString[i][0] !== '#') {
-                data.push(splitString[i]);
-            }
-        }
-    }
-
-    let numSplines = data.shift();
-    splines = [];
-
-    for (let i = 0; i < numSplines; i++) {
-        let points = data.shift();
-        let duration = data.shift();
-        let spline = new Spline(duration);
-
-        for (let j = 0; j < points; j++) {
-            let pos = data.shift().split(", ");
-            let rot = data.shift().split(", ");
-
-            spline.points.push(new Point(pos, rot));
-        }
-
-        splines.push(spline);
-    }
-
-    t = 0;
-    currentType = 0;
-    currentSpline = 0;
-    birdl = 0;
-    birdControlPoint = 0;
-    generateSplines();
 }
 
 // Helper function to generate spline points
