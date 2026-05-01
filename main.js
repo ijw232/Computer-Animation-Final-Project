@@ -231,7 +231,6 @@ function createRoad() {
             1.0));
         roadColors.push(roadColor);
     }
-    console.log(roadPoints, roadColors);
 }
 
 function createCar() {
@@ -342,17 +341,17 @@ function main()
         }
     }
 
-    let birdSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
-        new Point([-5, 0, -5], [0, -90, 0]),
-        new Point([0, 0, -7.5], [0, -135, 0]),
-        new Point([5, 0, -5], [0, -180, 0]),
-        new Point([7.5, 0, 0], [0, -225, 0]),
-        new Point([5, 0, 5], [0, -270, 0]),
-        new Point([0, 0, 7.5], [0, -315, 0]),
-        new Point([-5, 0, 5], [0, -360, 0]),
-        new Point([-7.5, 0, 0], [0, -405, 0]),
-        new Point([-5, 0, -5], [0, -450, 0]),
-        new Point([0, 0, -7.5], [0, -495, 0])]);
+    let birdSpline = new Spline([new Point([-7.5, 5, 0], [0, -45, 0]),
+        new Point([-5, 5, -5], [0, -90, 0]),
+        new Point([0, 5, -7.5], [0, -135, 0]),
+        new Point([5, 5, -5], [0, -180, 0]),
+        new Point([7.5, 5, 0], [0, -225, 0]),
+        new Point([5, 5, 5], [0, -270, 0]),
+        new Point([0, 5, 7.5], [0, -315, 0]),
+        new Point([-5, 5, 5], [0, -360, 0]),
+        new Point([-7.5, 5, 0], [0, -405, 0]),
+        new Point([-5, 5, -5], [0, -450, 0]),
+        new Point([0, 5, -7.5], [0, -495, 0])]);
 
     let carSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
         new Point([-5, 0, -5], [0, -90, 0]),
@@ -403,10 +402,9 @@ function render() {
 
     drawGround();
     drawRoad();
-    drawCar();
     // Draw the control points as small cubes
     // drawControlPoints();
-    if(t >= catmull.length - 2) {
+    if(t >= catmull[0].length - 2) {
         t=0;
         birdControlPoint=0;
         birdAlpha=0;
@@ -425,25 +423,17 @@ function render() {
 }
 
 function drawBird() {
-    if (t < catmull[0].length-2) { // Increment steps
-        t += 1;
-        birdl += 1;
-        birdAlpha += 2*Math.PI/segments;
-        if (birdl > segments) {
-            birdl = 0;
-            birdControlPoint += 1;
-        }
+    t += 1;
+    birdl += 1;
+    birdAlpha += 2*Math.PI/segments;
+    if (birdl > segments) {
+        birdl = 0;
+        birdControlPoint += 1;
     }
 
-        // Push main cube
-        loadVectors(animatedArray, colorsArray);
-        let point;
-
-    // Get correct spline points
-    // if (currentType) {
-    //     point = bSpline[t];
-    // } else {
-    point = catmull[0][t];
+    // Push main cube
+    loadVectors(animatedArray, colorsArray);
+    let point = catmull[0][t];
 
     // Compute quaternions based on what control points animation is currently between
     let q1 = toQuaternion(splines[currentSpline].points[birdControlPoint]);
@@ -468,14 +458,24 @@ function drawBird() {
 }
 
 function drawCar() {
-    if (t < catmull[0].length-2) { // Increment steps
-        carl += 1;
-        carAlpha += 2*Math.PI/segments;
-        if (carl > segments) {
-            carl = 0;
-            carControlPoint += 1;
-        }
+    carl += 1;
+    carAlpha += 2*Math.PI/segments;
+    if (carl > segments) {
+        carl = 0;
+        carControlPoint += 1;
     }
+
+    loadVectors(carPoints, carColors);
+    let point = catmull[1][t];
+    let q1 = toQuaternion(splines[currentSpline].points[carControlPoint]);
+    let q2 = toQuaternion(splines[currentSpline].points[carControlPoint+1]);
+    let rotation = quatToMatrix(normalize(slerp(q1, q2, carl/segments)));
+    let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
+    body.matrix = modelMatrix;
+
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+
+    gl.drawArrays(gl.TRIANGLES, 0, animatedArray.length);
 }
 
 
@@ -524,13 +524,6 @@ function drawRoad() {
     let modelMatrix = mat4();
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
     gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
-}
-
-function drawCar() {
-    loadVectors(carPoints, carColors);
-    let modelMatrix = mat4();
-    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
-    gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
 // Helper function to generate spline points
