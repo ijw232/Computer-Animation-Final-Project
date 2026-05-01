@@ -58,6 +58,7 @@ let cart = 0;
 let carl = 0;
 let carAlpha = 0;
 let carControlPoint = 0;
+let carFollow = false;
 
 
 class Point {
@@ -524,7 +525,13 @@ function main()
     let quat = toQuaternion(new Point([0,0,0], [90,90,0]));
     toEuler(quat);
 
+    document.addEventListener("keydown", cameraSwitch);
+
     render();
+}
+
+function cameraSwitch(e) {
+    if (e.key === "c") carFollow = !carFollow;
 }
 
 function render() {
@@ -609,6 +616,15 @@ function drawCar() {
 
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
 
+    if (carFollow) {
+        cameraMatrix = lookAt(vec3(mult(modelMatrix, vec4(5.0, 3.0, -7.0, 0.0))), vec3(point.x, point.y, point.z), vec3(0.0, 1.0, 0.0));
+        let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
+        gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
+    } else {
+        cameraMatrix = lookAt(vec3(0.0, 10.0, 23.0), vec3(0.0, 5.0, 0.0), vec3(0.0, 1.0, 0.0));
+        let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
+        gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
+    }
     gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
