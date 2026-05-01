@@ -18,7 +18,7 @@ let roadColors = [];
 const roadWidth = 4;
 const roadInnerRadius = 6;
 const roadQuality = 50;
-const roadElevation = 0.1;
+const roadElevation = 0.01;
 
 let carPoints= [];
 let carColors = [];
@@ -237,13 +237,111 @@ function createRoad() {
 
 function createCar() {
     const carKeyPoints = [
-        vec4(2.0, 1.0, -1.0, 1.0),
-        vec4(-2.0, 1.0, -1.0, 1.0),
-        vec4(-2.0, 1.0, 1.0, 1.0),
-        vec4(2.0, 1.0, 1.0, 1.0)
+        vec4(2.0, 0.5, -1.0, 1.0),
+        vec4(-2.0, 0.5, -1.0, 1.0),
+        vec4(-2.0, 0.5, 1.0, 1.0),
+        vec4(2.0, 0.5, 1.0, 1.0),
+        vec4(2.0, 1.5, -1.0, 1.0),
+        vec4(-2.0, 1.5, -1.0, 1.0),
+        vec4(-2.0, 1.5, 1.0, 1.0),
+        vec4(2.0, 1.5, 1.0, 1.0),
+        vec4(1.2, 1.5, -1.0, 1.0),
+        vec4(-1.2, 1.5, -1.0, 1.0),
+        vec4(-1.2, 1.5, 1.0, 1.0),
+        vec4(1.2, 1.5, 1.0, 1.0),
+        vec4(0.8, 2.0, -1.0, 1.0),
+        vec4(-0.8, 2.0, -1.0, 1.0),
+        vec4(-0.8, 2.0, 1.0, 1.0),
+        vec4(0.8, 2.0, 1.0, 1.0)
     ];
 
     genericQuad(0, 1, 2, 3, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(0, 4, 7, 3, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(1, 5, 4, 0, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(2, 6, 5, 1, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(3, 7, 6, 2, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(4, 8, 11, 7, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(9, 5, 6, 10, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(8, 12, 15, 11, carKeyPoints, windowColor, carPoints, carColors);
+    genericQuad(9, 13, 12, 8, carKeyPoints, windowColor, carPoints, carColors);
+    genericQuad(10, 14, 13, 9, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(11, 15, 14, 10, carKeyPoints, windowColor, carPoints, carColors);
+    genericQuad(12, 13, 14, 15, carKeyPoints, bodyColor, carPoints, carColors);
+
+    const degrees = 2 * Math.PI/50;
+
+    for (let j = 0; j < 4; j++) {
+        let z = Math.pow(-1, j);
+        let outerZ = z + 0.1;
+        let innerZ = z - 0.1;
+        let x = 1.3 - 2.6 * Math.floor(j/2);
+        for (let i = 0; i <= 50; i++) {
+            carPoints.push(vec4(x, 0.5, outerZ, 1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i) * degrees) + x,
+                0.5 * Math.sin((i) * degrees) + 0.5,
+                outerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i+1) * degrees) + x,
+                0.5 * Math.sin((i+1) * degrees) + 0.5,
+                outerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(x, 0.5, innerZ, 1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i+1) * degrees) + x,
+                0.5 * Math.sin((i+1) * degrees) + 0.5,
+                innerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i) * degrees) + x,
+                0.5 * Math.sin((i) * degrees) + 0.5,
+                innerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i) * degrees) + x,
+                0.5 * Math.sin((i) * degrees) + 0.5,
+                innerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i+1) * degrees) + x,
+                0.5 * Math.sin((i+1) * degrees) + 0.5,
+                innerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i+1) * degrees) + x,
+                0.5 * Math.sin((i+1) * degrees) + 0.5,
+                outerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i+1) * degrees) + x,
+                0.5 * Math.sin((i+1) * degrees) + 0.5,
+                outerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i) * degrees) + x,
+                0.5 * Math.sin((i) * degrees) + 0.5,
+                outerZ,
+                1.0));
+            carColors.push(tireColor);
+            carPoints.push(vec4(
+                0.5 * Math.cos((i) * degrees) + x,
+                0.5 * Math.sin((i) * degrees) + 0.5,
+                innerZ,
+                1.0));
+            carColors.push(tireColor);
+        }
+    }
 }
 
 function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray) {
