@@ -28,6 +28,10 @@ const bodyColor = vec4(1.0, 0.0, 0.0, 1.0);
 const windowColor = vec4(0.5, 1.0, 1.0, 1.0);
 const tireColor = vec4(0.1, 0.1, 0.1, 1.0);
 
+let skyboxPoints = [];
+let skyboxColors = [];
+let skyboxColor = vec4(0.5, 1.0, 1.0, 1.0);
+
 let cameraMatrix;
 let projMatrix;
 
@@ -182,12 +186,12 @@ function wing(a, b, c, d) {
 }
 
 function createGround() {
-    groundPoints.push(vec4(groundRadius, 0.0, -groundRadius, 1.0));
-    groundPoints.push(vec4(-groundRadius, 0.0, -groundRadius, 1.0));
-    groundPoints.push(vec4(-groundRadius, 0.0, groundRadius, 1.0));
-    groundPoints.push(vec4(groundRadius, 0.0, -groundRadius, 1.0));
-    groundPoints.push(vec4(-groundRadius, 0.0, groundRadius, 1.0));
-    groundPoints.push(vec4(groundRadius, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius*2, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius*2, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius*2, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius*2, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius*2, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius*2, 0.0, groundRadius, 1.0));
 }
 
 function createRoad() {
@@ -347,6 +351,26 @@ function createCar() {
     }
 }
 
+function createSkybox() {
+    const skyboxKey = [
+        vec4(groundRadius, -1.0, -groundRadius, 1.0),
+        vec4(-groundRadius, -1.0, -groundRadius, 1.0),
+        vec4(-groundRadius, -1.0, groundRadius, 1.0),
+        vec4(groundRadius, -1.0, groundRadius, 1.0),
+        vec4(groundRadius, groundRadius, -groundRadius, 1.0),
+        vec4(-groundRadius, -groundRadius, -groundRadius, 1.0),
+        vec4(-groundRadius, -groundRadius, groundRadius, 1.0),
+        vec4(groundRadius, -groundRadius, groundRadius, 1.0)
+    ]
+
+    genericQuad(0, 1, 2, 3, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+    genericQuad(0, 4, 7, 3, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+    genericQuad(1, 5, 4, 0, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+    genericQuad(2, 6, 5, 1, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+    genericQuad(3, 7, 6, 2, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+    genericQuad(4, 5, 6, 7, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+}
+
 function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray) {
     pointArray.push(keyPoints[a]);
     colorArray.push(color);
@@ -410,7 +434,7 @@ function main()
     gl.viewport( 0, 0, 400, 400);
 
     // Set flags
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.5, 1.0, 1.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
@@ -627,6 +651,13 @@ function drawRoad() {
     let modelMatrix = mat4();
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
     gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
+}
+
+function drawSkybox() {
+    loadVectors(skyboxPoints, skyboxColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.drawArrays(gl.TRIANGLES, 0, skyboxPoints.length);
 }
 
 // Helper function to generate spline points
