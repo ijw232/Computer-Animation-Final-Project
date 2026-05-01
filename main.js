@@ -37,8 +37,8 @@ let vPosition;
 let vColor;
 let modelMatrixLoc;
 
-const segments = 125;
-let t = 0;
+const birdSegments = 125;
+let birdt = 0;
 let birdl = 0;
 let birdAlpha = 0;
 let currentType = 0; // 0 = Catmull, 1 = BSpline
@@ -47,6 +47,8 @@ let currentSpline = 0;
 const numParts = 3;
 const flapAngle = 10;
 
+const carSegments = 225;
+let cart = 0;
 let carl = 0;
 let carAlpha = 0;
 let carControlPoint = 0;
@@ -341,17 +343,17 @@ function main()
         }
     }
 
-    let birdSpline = new Spline([new Point([-7.5, 10, 0], [0, -45, 0]),
-        new Point([-5, 10, -5], [0, -90, 0]),
-        new Point([0, 10, -7.5], [0, -135, 0]),
-        new Point([5, 10, -5], [0, -180, 0]),
-        new Point([7.5, 10, 0], [0, -225, 0]),
-        new Point([5, 10, 5], [0, -270, 0]),
-        new Point([0, 10, 7.5], [0, -315, 0]),
-        new Point([-5, 10, 5], [0, -360, 0]),
-        new Point([-7.5, 10, 0], [0, -405, 0]),
-        new Point([-5, 10, -5], [0, -450, 0]),
-        new Point([0, 10, -7.5], [0, -495, 0])]);
+    let birdSpline = new Spline([new Point([0, 10, -3.75], [0, -45, 0]),
+        new Point([1.25, 10, -6.25], [0, -90, 0]),
+        new Point([3.75, 10, -7.5], [0, -135, 0]),
+        new Point([6.25, 10, -6.25], [0, -180, 0]),
+        new Point([7.5, 10, -3.75], [0, -225, 0]),
+        new Point([6.25, 10, -1.25], [0, -270, 0]),
+        new Point([3.75, 10, 0], [0, -315, 0]),
+        new Point([1.25, 10, -1.25], [0, -360, 0]),
+        new Point([0, 10, -3.75], [0, -405, 0]),
+        new Point([1.25, 10, -6.25], [0, -450, 0]),
+        new Point([3.75, 10, -7.5], [0, -495, 0])]);
 
     let carSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
         new Point([-5, 0, -5], [0, -90, 0]),
@@ -367,7 +369,8 @@ function main()
 
     splines.push(birdSpline);
     splines.push(carSpline);
-    t = 0;
+    birdt = 0;
+    cart = 0;
     currentType = 0;
     currentSpline = 0;
     birdl = 0;
@@ -404,11 +407,14 @@ function render() {
     drawRoad();
     // Draw the control points as small cubes
     // drawControlPoints();
-    if(t >= catmull[0].length - 2) {
-        t=0;
+    if(birdt >= catmull[0].length - 2) {
+        birdt=0;
         birdControlPoint=0;
         birdAlpha=0;
         birdl=0;
+    }
+    if(cart >= catmull[1].length - 2) {
+        cart=0;
         carControlPoint=0;
         carAlpha=0;
         carl=0;
@@ -423,22 +429,22 @@ function render() {
 }
 
 function drawBird() {
-    t += 1;
+    birdt += 1;
     birdl += 1;
-    birdAlpha += 2*Math.PI/segments;
-    if (birdl > segments) {
+    birdAlpha += 2*Math.PI/birdSegments;
+    if (birdl > birdSegments) {
         birdl = 0;
         birdControlPoint += 1;
     }
 
     // Push main cube
     loadVectors(animatedArray, colorsArray);
-    let point = catmull[0][t];
+    let point = catmull[0][birdt];
 
     // Compute quaternions based on what control points animation is currently between
     let q1 = toQuaternion(splines[currentSpline].points[birdControlPoint]);
     let q2 = toQuaternion(splines[currentSpline].points[birdControlPoint+1]);
-    let rotation = quatToMatrix(normalize(slerp(q1, q2, birdl/segments)));
+    let rotation = quatToMatrix(normalize(slerp(q1, q2, birdl/birdSegments)));
 
     let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
     body.matrix = modelMatrix;
@@ -458,24 +464,25 @@ function drawBird() {
 }
 
 function drawCar() {
+    cart += 1;
     carl += 1;
-    carAlpha += 2*Math.PI/segments;
-    if (carl > segments) {
+    carAlpha += 2*Math.PI/carSegments;
+    if (carl > carSegments) {
         carl = 0;
         carControlPoint += 1;
     }
 
     loadVectors(carPoints, carColors);
-    let point = catmull[1][t];
+    let point = catmull[1][cart];
     let q1 = toQuaternion(splines[currentSpline].points[carControlPoint]);
     let q2 = toQuaternion(splines[currentSpline].points[carControlPoint+1]);
-    let rotation = quatToMatrix(normalize(slerp(q1, q2, carl/segments)));
+    let rotation = quatToMatrix(normalize(slerp(q1, q2, carl/carSegments)));
     let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
     body.matrix = modelMatrix;
 
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
 
-    gl.drawArrays(gl.TRIANGLES, 0, animatedArray.length);
+    gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
 
@@ -530,15 +537,15 @@ function drawRoad() {
 function generateSplines() {
     catmull = [];
     bSpline = [];
-    for (let i = 0; i < splines.length; i++) {
-        let spline = splines[i];
-        catmull.push(generateCatmullRomCurve(spline.points));
-        bSpline.push(generateBSpline(spline.points));
-    }
-
+    let spline = splines[0];
+    catmull.push(generateCatmullRomCurve(spline.points, birdSegments));
+    bSpline.push(generateBSpline(spline.points, birdSegments));
+    spline = splines[1];
+    catmull.push(generateCatmullRomCurve(spline.points, carSegments));
+    bSpline.push(generateBSpline(spline.points, carSegments));
 }
 
-function generateCatmullRomCurve(points) {
+function generateCatmullRomCurve(points, segments) {
     let curve = [];
     let M = [vec4(-1/2, 3/2, -3/2, 1/2),
         vec4(1.0, -5/2, 2.0, -1/2),
@@ -561,7 +568,7 @@ function generateCatmullRomCurve(points) {
     return curve;
 }
 
-function generateBSpline(points) {
+function generateBSpline(points, segments) {
     let curve = [];
     let M = [vec4(-1.0, 3.0, -3.0, 1.0),
         vec4(3.0, -6.0, 3.0, 0.0),
