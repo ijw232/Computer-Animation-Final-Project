@@ -7,6 +7,25 @@ let body;
 let animatedArray = [];
 let colorsArray =[];
 
+let groundPoints = [];
+const groundColor = vec4(0.0, 0.7, 0.0, 1.0);
+const groundColors = [groundColor, groundColor, groundColor, groundColor, groundColor, groundColor]
+const groundRadius = 20;
+
+let roadPoints = [];
+const roadColor = vec4(0.3, 0.3, 0.3, 1.0);
+let roadColors = [];
+const roadWidth = 4;
+const roadInnerRadius = 6;
+const roadQuality = 50;
+const roadElevation = 0.1;
+
+let carPoints= [];
+let carColors = [];
+const bodyColor = vec4(1.0, 0.0, 0.0, 1.0);
+const windowColor = vec4(0.5, 1.0, 1.0, 1.0);
+const tireColor = vec4(0.1, 0.1, 0.1, 1.0);
+
 let cameraMatrix;
 let projMatrix;
 
@@ -15,17 +34,18 @@ let catmull = [];
 let bSpline = [];
 
 let vPosition;
+let vColor;
 let modelMatrixLoc;
 
-let segments = 125;
+const segments = 125;
 let t = 0;
 let birdl = 0;
 let birdAlpha = 0;
 let currentType = 0; // 0 = Catmull, 1 = BSpline
 let birdControlPoint = 0;
 let currentSpline = 0;
-let numParts = 3;
-let flapAngle = 10;
+const numParts = 3;
+const flapAngle = 10;
 
 let carl = 0;
 let carAlpha = 0;
@@ -159,6 +179,91 @@ function wing(a, b, c, d) {
     wings.push(wingPoints[d]);
 }
 
+function createGround() {
+    groundPoints.push(vec4(groundRadius, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius, 0.0, -groundRadius, 1.0));
+    groundPoints.push(vec4(-groundRadius, 0.0, groundRadius, 1.0));
+    groundPoints.push(vec4(groundRadius, 0.0, groundRadius, 1.0));
+}
+
+function createRoad() {
+    const degrees = 2 * Math.PI/roadQuality;
+    const shift = degrees/2;
+    const outerR = roadInnerRadius + roadWidth;
+    const innerR = roadInnerRadius;
+    for (let i = 0; i < roadQuality; i++){
+        roadPoints.push(vec4(
+            outerR*Math.cos(i * degrees - shift),
+            roadElevation,
+            outerR*Math.sin(i * degrees - shift),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            innerR*Math.cos(i * degrees),
+            roadElevation,
+            innerR*Math.sin(i * degrees),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            outerR*Math.cos((i+1) * degrees - shift),
+            roadElevation,
+            outerR*Math.sin((i+1) * degrees - shift),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            innerR*Math.cos((i+1) * degrees),
+            roadElevation,
+            innerR*Math.sin((i+1) * degrees),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            outerR*Math.cos((i+1) * degrees - shift),
+            roadElevation,
+            outerR*Math.sin((i+1) * degrees - shift),
+            1.0));
+        roadColors.push(roadColor);
+        roadPoints.push(vec4(
+            innerR*Math.cos(i * degrees),
+            roadElevation,
+            innerR*Math.sin(i * degrees),
+            1.0));
+        roadColors.push(roadColor);
+    }
+    console.log(roadPoints, roadColors);
+}
+
+function createCar() {
+    const carKeyPoints = [
+        vec4(2.0, 1.0, -1.0, 1.0),
+        vec4(-2.0, 1.0, -1.0, 1.0),
+        vec4(-2.0, 1.0, 1.0, 1.0),
+        vec4(2.0, 1.0, 1.0, 1.0)
+    ];
+
+    genericQuad(0, 1, 2, 3, carKeyPoints, bodyColor, carPoints, carColors);
+}
+
+function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray) {
+    pointArray.push(keyPoints[a]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[b]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[c]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[c]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[d]);
+    colorArray.push(color);
+
+    pointArray.push(keyPoints[a]);
+    colorArray.push(color);
+}
 
 function colorCube()
 {
@@ -208,12 +313,12 @@ function main()
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
 
-    // Load file handler
-    //document.getElementById("files").onchange = loadFile;
-
     // Create cubes
     colorCube();
     makeWings();
+    createGround();
+    createRoad();
+    createCar();
 
     // Create Hierarchy
     body = new Body(mat4());
@@ -276,19 +381,14 @@ function main()
     gl.enableVertexAttribArray( vPosition );
     modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
 
-    let cBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colorsArray), gl.STATIC_DRAW );
-
-    let vColor = gl.getAttribLocation( program, "vColor" );
-    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+    vColor = gl.getAttribLocation( program, "vColor" );
     gl.enableVertexAttribArray( vColor );
 
-    projMatrix = perspective(90, 1, 0.1, 100);
+    projMatrix = perspective(65, 1, 0.1, 100);
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix));
 
-    cameraMatrix = lookAt(vec3(0.0, 5.0, 15.0), vec3(0.0, 3.0, 0.0), vec3(0.0, 1.0, 0.0));
+    cameraMatrix = lookAt(vec3(0.0, 10.0, 23.0), vec3(0.0, 5.0, 0.0), vec3(0.0, 1.0, 0.0));
     let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
     gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
 
@@ -301,9 +401,12 @@ function main()
 function render() {
     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
 
+    drawGround();
+    drawRoad();
+    drawCar();
     // Draw the control points as small cubes
-    drawControlPoints();
-    if(t >= catmull[0].length - 2) {
+    // drawControlPoints();
+    if(t >= catmull.length - 2) {
         t=0;
         birdControlPoint=0;
         birdAlpha=0;
@@ -332,12 +435,9 @@ function drawBird() {
         }
     }
 
-    // Push main cube
-    let vBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(animatedArray), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-    let point;
+        // Push main cube
+        loadVectors(animatedArray, colorsArray);
+        let point;
 
     // Get correct spline points
     // if (currentType) {
@@ -378,6 +478,8 @@ function drawCar() {
     }
 }
 
+
+
 // Used to apply kinematics recursively, direction used to determine side of body
 // for the first part of each wing which is then applied to all children.
 function drawWings(parentMatrix, wing, direction = 1) {
@@ -401,15 +503,34 @@ function drawWings(parentMatrix, wing, direction = 1) {
 
 // Draw small cubes at control points
 function drawControlPoints() {
-    let vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(pointsArray), gl.STATIC_DRAW );
-    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+    loadVectors(pointsArray, colorsArray);
 
 
     for (let i = 0; i < splines.length; i++) {
         splines[i].draw();
     }
+}
+
+function drawGround() {
+    loadVectors(groundPoints, groundColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+
+    gl.drawArrays(gl.TRIANGLES, 0, groundPoints.length)
+}
+
+function drawRoad() {
+    loadVectors(roadPoints, roadColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
+}
+
+function drawCar() {
+    loadVectors(carPoints, carColors);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
 // Helper function to generate spline points
@@ -544,4 +665,18 @@ function quatToMatrix(q) {
         vec4(2.0 * (x * z - w * y),     2.0 * (y * z + w * x),     1.0 - 2.0 * (x * x + y * y), 0.0),
         vec4(0.0,                       0.0,                       0.0,                       1.0)
     );
+}
+
+function loadVectors(points, colors = null) {
+    let vBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+
+    if (colors !== null) {
+        let cBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    }
 }
