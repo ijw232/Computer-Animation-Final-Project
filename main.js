@@ -19,11 +19,11 @@ let modelMatrixLoc;
 
 let segments = 125;
 let t = 0;
-let l = 0;
-let alpha = 0;
+let birdl = 0;
+let birdAlpha = 0;
 let currentType = 0; // 0 = Catmull, 1 = BSpline
 let lengthWait = 3;
-let controlPoint = 0;
+let birdControlPoint = 0;
 let currentSpline = 0;
 let numParts = 3;
 let flapAngle = 10;
@@ -250,12 +250,25 @@ function main()
         new Point([-5, 0, -5], [0, -450, 0]),
         new Point([0, 0, -7.5], [0, -495, 0])]);
 
+    let carSpline = new Spline(10, [new Point([-7.5, 0, 0], [0, -45, 0]),
+        new Point([-5, 0, -5], [0, -90, 0]),
+        new Point([0, 0, -7.5], [0, -135, 0]),
+        new Point([5, 0, -5], [0, -180, 0]),
+        new Point([7.5, 0, 0], [0, -225, 0]),
+        new Point([5, 0, 5], [0, -270, 0]),
+        new Point([0, 0, 7.5], [0, -315, 0]),
+        new Point([-5, 0, 5], [0, -360, 0]),
+        new Point([-7.5, 0, 0], [0, -405, 0]),
+        new Point([-5, 0, -5], [0, -450, 0]),
+        new Point([0, 0, -7.5], [0, -495, 0])]);
+
     splines.push(birdSpline);
+    splines.push(carSpline);
     t = 0;
     currentType = 0;
     currentSpline = 0;
-    l = 0;
-    controlPoint = 0;
+    birdl = 0;
+    birdControlPoint = 0;
     generateSplines();
 
     vPosition = gl.getAttribLocation( program, "vPosition" );
@@ -289,60 +302,62 @@ function render() {
 
     // Draw the control points as small cubes
     drawControlPoints();
-    if(t === 1006) {
+    if(t >= catmull[0].length - 2) {
         t=0;
-        controlPoint=0;
-        alpha=0;
-        l=0;
+        birdControlPoint=0;
+        birdAlpha=0;
+        birdl=0;
     }
-    // Increment step counter
-    if (catmull.length > 0) { // Switch splines
-        if (t < catmull.length-2) { // Increment steps
-            t += 1;
-            l += 1;
-            alpha += 2*Math.PI/segments;
-            if (l > segments) {
-                l = 0;
-                controlPoint += 1;
-            }
-        }
-
-        // Push main cube
-        let vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(animatedArray), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-        let point;
-
-        // Get correct spline points
-        // if (currentType) {
-        //     point = bSpline[t];
-        // } else {
-        point = catmull[t];
-
-        // Compute quaternions based on what control points animation is currently between
-        let q1 = toQuaternion(splines[currentSpline].points[controlPoint]);
-        let q2 = toQuaternion(splines[currentSpline].points[controlPoint+1]);
-        let rotation = quatToMatrix(normalize(slerp(q1, q2, l/segments)));
-
-        let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
-        body.matrix = modelMatrix;
-
-        gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
-
-        gl.drawArrays(gl.TRIANGLES, 0, animatedArray.length);
-
-        vBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(wings), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
-
-        for (let c = 0; c < body.children.length; c++) {
-            drawWings(body.matrix, body.children[c], Math.sign(body.children[c].offset));
-        }
+    if(catmull[0].length > 0) {
+        drawBird();
     }
-
     requestAnimFrame(render);
+}
+
+function drawBird() {
+    if (t < catmull[0].length-2) { // Increment steps
+        t += 1;
+        birdl += 1;
+        birdAlpha += 2*Math.PI/segments;
+        if (birdl > segments) {
+            birdl = 0;
+            birdControlPoint += 1;
+        }
+    }
+
+    // Push main cube
+    let vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(animatedArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    let point;
+
+    // Get correct spline points
+    // if (currentType) {
+    //     point = bSpline[t];
+    // } else {
+    point = catmull[0][t];
+
+    // Compute quaternions based on what control points animation is currently between
+    let q1 = toQuaternion(splines[currentSpline].points[birdControlPoint]);
+    let q2 = toQuaternion(splines[currentSpline].points[birdControlPoint+1]);
+    let rotation = quatToMatrix(normalize(slerp(q1, q2, birdl/segments)));
+
+    let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
+    body.matrix = modelMatrix;
+
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+
+    gl.drawArrays(gl.TRIANGLES, 0, animatedArray.length);
+
+    vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(wings), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+
+    for (let c = 0; c < body.children.length; c++) {
+        drawWings(body.matrix, body.children[c], Math.sign(body.children[c].offset));
+    }
 }
 
 // Used to apply kinematics recursively, direction used to determine side of body
@@ -350,7 +365,7 @@ function render() {
 function drawWings(parentMatrix, wing, direction = 1) {
     let offset = wing.offset;
 
-    let matrix = rotateZ(Math.sin(alpha) * flapAngle);
+    let matrix = rotateZ(Math.sin(birdAlpha) * flapAngle);
     matrix = mult(translate(Math.abs(offset), 0, 0), matrix);
     if (direction === -1) {
         matrix = mult(rotateY(180), matrix);
@@ -419,8 +434,8 @@ function drawSpline(evt) {
     t = 0;
     currentType = 0;
     currentSpline = 0;
-    l = 0;
-    controlPoint = 0;
+    birdl = 0;
+    birdControlPoint = 0;
     generateSplines();
 }
 
@@ -430,8 +445,8 @@ function generateSplines() {
     bSpline = [];
     for (let i = 0; i < splines.length; i++) {
         let spline = splines[i];
-        catmull = generateCatmullRomCurve(spline.points/*.concat([spline.points[0], spline.points[1]])*/);
-        bSpline = generateBSpline(spline.points/*.concat([spline.points[0], spline.points[1]])*/);
+        catmull.push(generateCatmullRomCurve(spline.points));
+        bSpline.push(generateBSpline(spline.points));
     }
 
 }
