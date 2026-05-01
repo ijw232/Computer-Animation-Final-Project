@@ -136,14 +136,14 @@ let wingPoints = [
 ]
 
 let vertexColors = [
-    vec4( 0.0, 0.0, 0.0, 1.0 ),  // black
-    vec4( 1.0, 0.0, 0.0, 1.0 ),  // red
-    vec4( 0.0, 0.0, 1.0, 1.0 ),  // blue
-    vec4( 1.0, 1.0, 0.0, 1.0 ),  // yellow
-    vec4( 1.0, 0.0, 1.0, 1.0 ),  // magenta
-    vec4( 0.0, 1.0, 0.0, 1.0 ),  // green
-    vec4( 0.0, 1.0, 1.0, 1.0 ),  // cyan
-    vec4( 1.0, 1.0, 1.0, 1.0 )   // white
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 ),
+    vec4( 0.8, 0.5, 0.0, 1.0 )
 ];
 
 function quad(a, b, c, d) {
@@ -453,17 +453,17 @@ function main()
         new Point([1.25, 10, -6.25], [0, -450, 0]),
         new Point([3.75, 10, -7.5], [0, -495, 0])]);
 
-    let carSpline = new Spline([new Point([-7.5, 0, 0], [0, -45, 0]),
-        new Point([-5, 0, -5], [0, -90, 0]),
-        new Point([0, 0, -7.5], [0, -135, 0]),
-        new Point([5, 0, -5], [0, -180, 0]),
-        new Point([7.5, 0, 0], [0, -225, 0]),
-        new Point([5, 0, 5], [0, -270, 0]),
-        new Point([0, 0, 7.5], [0, -315, 0]),
-        new Point([-5, 0, 5], [0, -360, 0]),
-        new Point([-7.5, 0, 0], [0, -405, 0]),
-        new Point([-5, 0, -5], [0, -450, 0]),
-        new Point([0, 0, -7.5], [0, -495, 0])]);
+    let carSpline = new Spline([new Point([-7.5, 0, 0], [0, 45, 0]),
+        new Point([-5, 0, -5], [0, 0, 0]),
+        new Point([0, 0, -7.5], [0, -45, 0]),
+        new Point([5, 0, -5], [0, -90, 0]),
+        new Point([7.5, 0, 0], [0, -135, 0]),
+        new Point([5, 0, 5], [0, -180, 0]),
+        new Point([0, 0, 7.5], [0, -225, 0]),
+        new Point([-5, 0, 5], [0, -270, 0]),
+        new Point([-7.5, 0, 0], [0, -315, 0]),
+        new Point([-5, 0, -5], [0, -360, 0]),
+        new Point([0, 0, -7.5], [0, -405, 0])]);
 
     splines.push(birdSpline);
     splines.push(carSpline);
@@ -572,8 +572,8 @@ function drawCar() {
 
     loadVectors(carPoints, carColors);
     let point = catmull[1][cart];
-    let q1 = toQuaternion(splines[currentSpline].points[carControlPoint]);
-    let q2 = toQuaternion(splines[currentSpline].points[carControlPoint+1]);
+    let q1 = toQuaternion(splines[1].points[carControlPoint]);
+    let q2 = toQuaternion(splines[1].points[carControlPoint+1]);
     let rotation = quatToMatrix(normalize(slerp(q1, q2, carl/carSegments)));
     let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
     body.matrix = modelMatrix;
