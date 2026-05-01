@@ -22,13 +22,10 @@ let t = 0;
 let birdl = 0;
 let birdAlpha = 0;
 let currentType = 0; // 0 = Catmull, 1 = BSpline
-let lengthWait = 3;
 let birdControlPoint = 0;
 let currentSpline = 0;
 let numParts = 3;
 let flapAngle = 10;
-
-let startWait = 0;
 
 
 class Point {
@@ -287,7 +284,7 @@ function main()
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
     gl.uniformMatrix4fv(projMatrixLoc, false, flatten(projMatrix));
 
-    cameraMatrix = lookAt(vec3(0.0, 5.0, 10.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+    cameraMatrix = lookAt(vec3(0.0, 5.0, 15.0), vec3(0.0, 3.0, 0.0), vec3(0.0, 1.0, 0.0));
     let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
     gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
 
@@ -372,7 +369,7 @@ function drawWings(parentMatrix, wing, direction = 1) {
     }
 
     wing.matrix = mult(parentMatrix, matrix);
-
+    gl.pointSize = 8.0;
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(wing.matrix));
     gl.drawArrays(gl.TRIANGLES, 0, wings.length);
 
