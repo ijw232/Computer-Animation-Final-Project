@@ -585,7 +585,7 @@ function main()
     groundBuffers = createBuffers(groundPoints, groundColors, groundNormals);
     roadBuffers = createBuffers(roadPoints, roadColors, roadNormals);
 
-    const lightPosition = vec3(10.0, 15.0, 10.0);
+    const lightPosition = vec3(0.0, 15.0, 23.0);
     const eyePosition = vec3(0.0, 10.0, 23.0);
 
     gl.uniform3fv(
@@ -997,4 +997,20 @@ function bindBuffers(buffers) {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.nBuffer);
     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+}
+
+function inverseKinematics(X, Y, L1, L2) {
+    let angle = Math.atan2(Y, X);
+    let angle1 = Math.acos((L1*L1+X*X+Y*Y-L2*L2)/(2*L1*Math.sqrt(X*X+Y*Y))) + angle;
+    let angle2 = Math.acos(((X*X+Y*Y)-L1*L1-L2*L2)/(2*L1*L2));
+    return [angle1, angle1 - angle2];
+}
+
+
+function forwardKinematics(originx, originy, angle1, angle2, L1, L2) {
+    let x1 = Math.cos(angle1)*L1;
+    let y1 = Math.sin(angle1)*L1;
+    let x2 = Math.cos(angle2)*L2 + x1;
+    let y2 = Math.sin(angle2)*L2 + y1;
+    return [[x1, y1], [x2, y2]];
 }
