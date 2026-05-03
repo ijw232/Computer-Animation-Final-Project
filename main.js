@@ -60,6 +60,19 @@ let carAlpha = 0;
 let carControlPoint = 0;
 let carFollow = false;
 
+let normalsArray = [];
+let vNormal;
+
+let carNormals = [];
+let groundNormals = [];
+let roadNormals = [];
+let wingNormals = [];
+
+let birdBuffers = {};
+let wingBuffers = {};
+let carBuffers = {};
+let groundBuffers = {};
+let roadBuffers = {};
 
 class Point {
     constructor(pos, rot) {
@@ -91,6 +104,7 @@ class Spline {
             let modelMatrix = translate(parseFloat(x), parseFloat(y), parseFloat(z));
             gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
 
+            setNormalMatrix(modelMatrix);
             gl.drawArrays(gl.TRIANGLES, 0, pointsArray.length);
         }
     }
@@ -154,29 +168,41 @@ let vertexColors = [
 ];
 
 function quad(a, b, c, d) {
+    let normal = computeNormal(
+        pointCube[a],
+        pointCube[b],
+        pointCube[c]
+    );
+
     pointsArray.push(pointCube[a]);
     animatedArray.push(animatedCube[a]);
     colorsArray.push(vertexColors[a]);
+    normalsArray.push(normal);
 
     pointsArray.push(pointCube[b]);
     animatedArray.push(animatedCube[b]);
     colorsArray.push(vertexColors[a]);
+    normalsArray.push(normal);
 
     pointsArray.push(pointCube[c]);
     animatedArray.push(animatedCube[c]);
     colorsArray.push(vertexColors[a]);
+    normalsArray.push(normal);
 
     pointsArray.push(pointCube[a]);
     animatedArray.push(animatedCube[a]);
     colorsArray.push(vertexColors[a]);
+    normalsArray.push(normal);
 
     pointsArray.push(pointCube[c]);
     animatedArray.push(animatedCube[c]);
     colorsArray.push(vertexColors[a]);
+    normalsArray.push(normal);
 
     pointsArray.push(pointCube[d]);
     animatedArray.push(animatedCube[d]);
     colorsArray.push(vertexColors[a]);
+    normalsArray.push(normal);
 }
 
 function wing(a, b, c, d) {
@@ -186,15 +212,31 @@ function wing(a, b, c, d) {
     wings.push(wingPoints[a]);
     wings.push(wingPoints[c]);
     wings.push(wingPoints[d]);
+
+    let normal = computeNormal(
+        wingPoints[a],
+        wingPoints[b],
+        wingPoints[c]
+    );
+
+    for(let i = 0; i < 6; i++) {
+        wingNormals.push(normal);
+    }
 }
 
 function createGround() {
+    let normal = vec3(0.0, 1.0, 0.0);
+
     groundPoints.push(vec4(groundRadius*2, 0.0, -groundRadius, 1.0));
     groundPoints.push(vec4(-groundRadius*2, 0.0, -groundRadius, 1.0));
     groundPoints.push(vec4(-groundRadius*2, 0.0, groundRadius, 1.0));
     groundPoints.push(vec4(groundRadius*2, 0.0, -groundRadius, 1.0));
     groundPoints.push(vec4(-groundRadius*2, 0.0, groundRadius, 1.0));
     groundPoints.push(vec4(groundRadius*2, 0.0, groundRadius, 1.0));
+
+    for(let i = 0; i < 6; i++) {
+        groundNormals.push(normal);
+    }
 }
 
 function createRoad() {
@@ -239,6 +281,9 @@ function createRoad() {
             innerR*Math.sin(i * degrees),
             1.0));
         roadColors.push(roadColor);
+        for(let k = 0; k < 6; k++) {
+            roadNormals.push(vec3(0.0, 1.0, 0.0));
+        }
     }
 }
 
@@ -262,21 +307,21 @@ function createCar() {
         vec4(0.8, 2.0, 1.0, 1.0)
     ];
 
-    genericQuad(0, 1, 2, 3, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(0, 4, 7, 3, carKeyPoints, bodyColor, hoodPoints, hoodColors);
-    genericQuad(1, 5, 4, 0, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(0, 4, 5, 1, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(2, 6, 5, 1, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(1, 5, 6, 2, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(3, 7, 6, 2, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(2, 6, 7, 3, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(4, 8, 11, 7, carKeyPoints, bodyColor, hoodPoints, hoodColors);
-    genericQuad(9, 5, 6, 10, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(8, 12, 15, 11, carKeyPoints, windowColor, carPoints, carColors);
-    genericQuad(9, 13, 12, 8, carKeyPoints, windowColor, carPoints, carColors);
-    genericQuad(10, 14, 13, 9, carKeyPoints, bodyColor, carPoints, carColors);
-    genericQuad(11, 15, 14, 10, carKeyPoints, windowColor, carPoints, carColors);
-    genericQuad(12, 13, 14, 15, carKeyPoints, bodyColor, carPoints, carColors);
+    genericQuad(0, 1, 2, 3, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(0, 4, 7, 3, carKeyPoints, bodyColor, hoodPoints, hoodColors, carNormals);
+    genericQuad(1, 5, 4, 0, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(0, 4, 5, 1, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(2, 6, 5, 1, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(1, 5, 6, 2, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(3, 7, 6, 2, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(2, 6, 7, 3, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(4, 8, 11, 7, carKeyPoints, bodyColor, hoodPoints, hoodColors, carNormals);
+    genericQuad(9, 5, 6, 10, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(8, 12, 15, 11, carKeyPoints, windowColor, carPoints, carColors, carNormals);
+    genericQuad(9, 13, 12, 8, carKeyPoints, windowColor, carPoints, carColors, carNormals);
+    genericQuad(10, 14, 13, 9, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
+    genericQuad(11, 15, 14, 10, carKeyPoints, windowColor, carPoints, carColors, carNormals);
+    genericQuad(12, 13, 14, 15, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
 
     const degrees = 2 * Math.PI/50;
 
@@ -374,24 +419,47 @@ function createSkybox() {
     genericQuad(4, 5, 6, 7, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
 }
 
-function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray) {
+function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray, normalArray = null) {
+    let normal = computeNormal(
+        keyPoints[a],
+        keyPoints[b],
+        keyPoints[c]
+    );
     pointArray.push(keyPoints[a]);
     colorArray.push(color);
+    if(normalArray) {
+        normalArray.push(normal);
+    }
 
     pointArray.push(keyPoints[b]);
     colorArray.push(color);
+    if(normalArray) {
+        normalArray.push(normal);
+    }
 
     pointArray.push(keyPoints[c]);
     colorArray.push(color);
+    if(normalArray) {
+        normalArray.push(normal);
+    }
 
     pointArray.push(keyPoints[c]);
     colorArray.push(color);
+    if(normalArray) {
+        normalArray.push(normal);
+    }
 
     pointArray.push(keyPoints[d]);
     colorArray.push(color);
+    if(normalArray) {
+        normalArray.push(normal);
+    }
 
     pointArray.push(keyPoints[a]);
     colorArray.push(color);
+    if(normalArray) {
+        normalArray.push(normal);
+    }
 }
 
 function colorCube()
@@ -507,12 +575,58 @@ function main()
     carControlPoint = 0;
     generateSplines();
 
+    birdBuffers = createBuffers(animatedArray, colorsArray, normalsArray);
+    wingBuffers = createBuffers(
+        wings,
+        colorsArray.slice(0, wings.length),
+        wingNormals
+    );
+    carBuffers = createBuffers(carPoints, carColors, carNormals);
+    groundBuffers = createBuffers(groundPoints, groundColors, groundNormals);
+    roadBuffers = createBuffers(roadPoints, roadColors, roadNormals);
+
+    const lightPosition = vec3(10.0, 15.0, 10.0);
+    const eyePosition = vec3(0.0, 10.0, 23.0);
+
+    gl.uniform3fv(
+        gl.getUniformLocation(program, "lightPosition"),
+        flatten(lightPosition)
+    );
+
+    gl.uniform3fv(
+        gl.getUniformLocation(program, "eyePosition"),
+        flatten(eyePosition)
+    );
+
+    gl.uniform4fv(
+        gl.getUniformLocation(program, "ambientProduct"),
+        flatten(vec4(0.25, 0.25, 0.25, 1.0))
+    );
+
+    gl.uniform4fv(
+        gl.getUniformLocation(program, "diffuseProduct"),
+        flatten(vec4(1.0, 1.0, 1.0, 1.0))
+    );
+
+    gl.uniform4fv(
+        gl.getUniformLocation(program, "specularProduct"),
+        flatten(vec4(1.0, 1.0, 1.0, 1.0))
+    );
+
+    gl.uniform1f(
+        gl.getUniformLocation(program, "shininess"),
+        50.0
+    );
+
     vPosition = gl.getAttribLocation( program, "vPosition" );
     gl.enableVertexAttribArray( vPosition );
     modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
 
     vColor = gl.getAttribLocation( program, "vColor" );
     gl.enableVertexAttribArray( vColor );
+
+    vNormal = gl.getAttribLocation(program, "vNormal");
+    gl.enableVertexAttribArray(vNormal);
 
     projMatrix = perspective(65, 1, 0.1, 100);
     let projMatrixLoc = gl.getUniformLocation(program, "projMatrix");
@@ -572,7 +686,7 @@ function drawBird() {
     }
 
     // Push main cube
-    loadVectors(animatedArray, colorsArray);
+    bindBuffers(birdBuffers);
     let point = catmull[0][birdt];
 
     // Compute quaternions based on what control points animation is currently between
@@ -585,12 +699,8 @@ function drawBird() {
 
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
 
+    setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, animatedArray.length);
-
-    vBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(wings), gl.STATIC_DRAW);
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
 
     for (let c = 0; c < body.children.length; c++) {
         drawWings(body.matrix, body.children[c], Math.sign(body.children[c].offset));
@@ -606,7 +716,7 @@ function drawCar() {
         carControlPoint += 1;
     }
 
-    loadVectors(carPoints, carColors);
+    bindBuffers(carBuffers);
     let point = catmull[1][cart];
     let q1 = toQuaternion(splines[1].points[carControlPoint]);
     let q2 = toQuaternion(splines[1].points[carControlPoint+1]);
@@ -625,6 +735,7 @@ function drawCar() {
         let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
         gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
     }
+    setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
@@ -641,9 +752,12 @@ function drawWings(parentMatrix, wing, direction = 1) {
         matrix = mult(rotateY(180), matrix);
     }
 
+    bindBuffers(wingBuffers);
+
     wing.matrix = mult(parentMatrix, matrix);
     gl.pointSize = 8.0;
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(wing.matrix));
+    setNormalMatrix(wing.matrix);
     gl.drawArrays(gl.TRIANGLES, 0, wings.length);
 
     if (wing.child !== null) {
@@ -662,17 +776,18 @@ function drawControlPoints() {
 }
 
 function drawGround() {
-    loadVectors(groundPoints, groundColors);
+    bindBuffers(groundBuffers);
     let modelMatrix = mat4();
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
-
+    setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, groundPoints.length)
 }
 
 function drawRoad() {
-    loadVectors(roadPoints, roadColors);
+    bindBuffers(roadBuffers);
     let modelMatrix = mat4();
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
 }
 
@@ -680,6 +795,7 @@ function drawSkybox() {
     loadVectors(skyboxPoints, skyboxColors);
     let modelMatrix = mat4();
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, skyboxPoints.length);
 }
 
@@ -817,7 +933,7 @@ function quatToMatrix(q) {
     );
 }
 
-function loadVectors(points, colors = null) {
+function loadVectors(points, colors = null, normals = null) {
     let vBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
@@ -829,4 +945,56 @@ function loadVectors(points, colors = null) {
         gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
         gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     }
+
+    if(normals !== null) {
+        let nBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
+        gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
+    }
+}
+
+function computeNormal(a, b, c) {
+    let t1 = subtract(b, a);
+    let t2 = subtract(c, a);
+    let normal = normalize(cross(t1, t2));
+    return vec3(normal);
+}
+
+function setNormalMatrix(modelMatrix) {
+    let n = normalMatrix(modelMatrix, true);
+    gl.uniformMatrix3fv(
+        gl.getUniformLocation(program, "normalMatrix"),
+        false,
+        flatten(n)
+    );
+}
+
+function createBuffers(points, colors, normals) {
+    let buffers = {};
+
+    buffers.vBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW);
+
+    buffers.cBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.cBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
+
+    buffers.nBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.nBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
+
+    return buffers;
+}
+
+function bindBuffers(buffers) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vBuffer);
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.cBuffer);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.nBuffer);
+    gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
 }
