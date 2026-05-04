@@ -67,12 +67,20 @@ let carNormals = [];
 let groundNormals = [];
 let roadNormals = [];
 let wingNormals = [];
+let pistonHeadNormals = [];
+let pistonArm1Normals = [];
+let pistonArm2Normals = [];
+let particleNormals = [];
 
 let birdBuffers = {};
 let wingBuffers = {};
 let carBuffers = {};
 let groundBuffers = {};
 let roadBuffers = {};
+let pistonHeadBuffers = {};
+let pistonArm1Buffers = {};
+let pistonArm2Buffers = {};
+let particleBuffers = {};
 
 class Point {
     constructor(pos, rot) {
@@ -107,6 +115,71 @@ class Spline {
             setNormalMatrix(modelMatrix);
             gl.drawArrays(gl.TRIANGLES, 0, pointsArray.length);
         }
+    }
+}
+
+class Particle {
+    constructor(position, velocity) {
+        this.position = position;
+        this.velocity = velocity;
+    }
+
+    // Update position based on velocity
+    update(dt) {
+        this.position = add(this.position, scale(dt, this.velocity));
+    }
+
+    /**
+     *  Handles collisions between this particle and the four walls
+     */
+    handleWallCollisions() {
+        if (this.position[0] > pistonEnd[0] + pistonArmLength1 - particleRadius) {
+            this.position[0] = pistonEnd[0] + pistonArmLength1 - particleRadius;
+            this.velocity[0] = -this.velocity[0];
+        }
+        if (this.position[0] < particleRadius + pistonEnd[0] - pistonArmLength1) {
+            this.position[0] = particleRadius + pistonEnd[0] - pistonArmLength1;
+            this.velocity[0] = -this.velocity[0];
+        }
+        if (this.position[1] < pistonEnd[1] + pistonHeadHeight + particleRadius) {
+            this.position[1] = pistonEnd[1] + pistonHeadHeight + particleRadius;
+            this.velocity[1] = -this.velocity[1];
+        }
+        if (this.position[1] > yUpperBound - particleRadius) {
+            this.position[1] = yUpperBound - particleRadius;
+            this.velocity[1] = -this.velocity[1];
+        }
+        if (this.position[2] > pistonEnd[2] + pistonArmLength1 - particleRadius) {
+            this.position[2] = pistonEnd[2] + pistonArmLength1 - particleRadius;
+            this.velocity[2] = -this.velocity[2];
+        }
+        if (this.position[2] < particleRadius + pistonEnd[2] - pistonArmLength1) {
+            this.position[2] = particleRadius + pistonEnd[2] - pistonArmLength1;
+            this.velocity[2] = -this.velocity[2];
+        }
+    }
+
+    /**
+     * Handles collisions between this particle and another particle p.
+     * @param p The other particle used for collision detection.
+     */
+    handleParticleCollisions(p) {
+        let n = vec3(p.position[0] - this.position[0], p.position[1] - this.position[1], p.position[2] - this.position[2]);
+        let vr = vec3(p.velocity[0] - this.velocity[0], p.velocity[1] - this.velocity[1], p.velocity[2] - this.velocity[2]);
+        let vnc = (dot(n, vr) / (n[0]*n[0] + n[1]*n[1] + n[2]*n[2]));
+        let vn = vec3(n[0] * vnc, n[1] * vnc, n[2] * vnc);
+        this.velocity = add(this.velocity, vn);
+        p.velocity = subtract(p.velocity, vn);
+    }
+
+    // Draw particle as a point
+    render() {
+        bindBuffers(particleBuffers);
+        let modelMatrix = translate(this.position[0], this.position[1], this.position[2]);
+        modelMatrix = mult(carMatrix, modelMatrix);
+        gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+        setNormalMatrix(modelMatrix);
+        gl.drawArrays(gl.TRIANGLES, 0, particlePoints.length);
     }
 }
 
@@ -552,15 +625,15 @@ function main()
         new Point([3.75, 10, -7.5], [0, -495, 0])]);
 
     let carSpline = new Spline([new Point([-7.5, 0, 0], [0, 45, 0]),
-        new Point([-5, 0, -5], [0, 0, 0]),
+        new Point([-5.3, 0, -5.3], [0, 0, 0]),
         new Point([0, 0, -7.5], [0, -45, 0]),
-        new Point([5, 0, -5], [0, -90, 0]),
+        new Point([5.3, 0, -5.3], [0, -90, 0]),
         new Point([7.5, 0, 0], [0, -135, 0]),
-        new Point([5, 0, 5], [0, -180, 0]),
+        new Point([5.3, 0, 5.3], [0, -180, 0]),
         new Point([0, 0, 7.5], [0, -225, 0]),
-        new Point([-5, 0, 5], [0, -270, 0]),
+        new Point([-5.3, 0, 5.3], [0, -270, 0]),
         new Point([-7.5, 0, 0], [0, -315, 0]),
-        new Point([-5, 0, -5], [0, -360, 0]),
+        new Point([-5.3, 0, -5.3], [0, -360, 0]),
         new Point([0, 0, -7.5], [0, -405, 0])]);
 
     splines.push(birdSpline);
@@ -584,6 +657,10 @@ function main()
     carBuffers = createBuffers(carPoints, carColors, carNormals);
     groundBuffers = createBuffers(groundPoints, groundColors, groundNormals);
     roadBuffers = createBuffers(roadPoints, roadColors, roadNormals);
+    pistonHeadBuffers = createBuffers(pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+    pistonArm1Buffers = createBuffers(pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+    pistonArm2Buffers = createBuffers(pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+    particleBuffers = createBuffers(particlePoints, particleColors, particleNormals);
 
     const lightPosition = vec3(0.0, 15.0, 23.0);
     const eyePosition = vec3(0.0, 10.0, 23.0);
@@ -673,6 +750,14 @@ function render() {
     if(catmull[1].length > 0) {
         drawCar();
     }
+    drawPiston();
+    const dt = 0.01;
+    handleCollisionsBetweenParticles();
+    for (let p of particles) {
+        p.handleWallCollisions();
+        p.update(dt);
+        p.render();
+    }
     requestAnimFrame(render);
 }
 
@@ -721,13 +806,13 @@ function drawCar() {
     let q1 = toQuaternion(splines[1].points[carControlPoint]);
     let q2 = toQuaternion(splines[1].points[carControlPoint+1]);
     let rotation = quatToMatrix(normalize(slerp(q1, q2, carl/carSegments)));
-    let modelMatrix = mult(translate(point.x, point.y, point.z), rotation);
-    body.matrix = modelMatrix;
+    carMatrix = mult(translate(point.x, point.y, point.z), rotation);
+    body.matrix = carMatrix;
 
-    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(carMatrix));
 
     if (carFollow) {
-        cameraMatrix = lookAt(vec3(mult(modelMatrix, vec4(5.0, 3.0, -7.0, 0.0))), vec3(point.x, point.y, point.z), vec3(0.0, 1.0, 0.0));
+        cameraMatrix = lookAt(vec3(mult(carMatrix, vec4(4.0, 2.0, -7.0, 0.0))), vec3(point.x, point.y, point.z), vec3(0.0, 1.0, 0.0));
         let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
         gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
     } else {
@@ -735,7 +820,7 @@ function drawCar() {
         let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
         gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
     }
-    setNormalMatrix(modelMatrix);
+    setNormalMatrix(carMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, carPoints.length);
 }
 
@@ -789,6 +874,35 @@ function drawRoad() {
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
     setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, roadPoints.length);
+}
+
+function drawPiston() {
+    p += 0.005;
+    if (p >= 2*Math.PI) p -= 2*Math.PI;
+    let y = (Math.cos(p) * pistonArmLength1) + pistonArmLength2 + pistonStart[1];
+    pistonEnd = vec4(pistonStart[0], y, pistonStart[2], 1.0);
+    let angles = inverseKinematics(pistonEnd[1] - pistonStart[1], pistonEnd[2] - pistonStart[2]);
+    let pistonMid = forwardKinematics(pistonStart[1], pistonStart[2], angles[0], angles[1], pistonArmLength1);
+    bindBuffers(pistonArm1Buffers);
+    let modelMatrix = mult(translate(pistonStart[0], pistonStart[1], pistonStart[2]), rotateX((angles[0] - Math.PI/2)*180/Math.PI));
+    modelMatrix = mult(carMatrix, modelMatrix);
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, pistonArm1Points.length);
+
+    bindBuffers(pistonArm2Buffers);
+    modelMatrix = mult(translate(pistonMid[0], pistonMid[1], pistonMid[2]), rotateX((angles[1]-Math.PI/2)*180/Math.PI));
+    modelMatrix = mult(carMatrix, modelMatrix);
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, pistonArm2Points.length);
+
+    bindBuffers(pistonHeadBuffers);
+    modelMatrix = translate(pistonEnd[0], pistonEnd[1], pistonEnd[2]);
+    modelMatrix = mult(carMatrix, modelMatrix);
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, pistonHeadPoints.length);
 }
 
 function drawSkybox() {
@@ -999,18 +1113,34 @@ function bindBuffers(buffers) {
     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
 }
 
-function inverseKinematics(X, Y, L1, L2) {
-    let angle = Math.atan2(Y, X);
-    let angle1 = Math.acos((L1*L1+X*X+Y*Y-L2*L2)/(2*L1*Math.sqrt(X*X+Y*Y))) + angle;
-    let angle2 = Math.acos(((X*X+Y*Y)-L1*L1-L2*L2)/(2*L1*L2));
-    return [angle1, angle1 - angle2];
+function inverseKinematics(Y, Z) {
+    let direction = Math.sign(Math.PI-p);
+    let slack = .000001
+    let d = Math.sqrt(Z * Z + Y * Y);
+    d = Math.max(Math.abs(pistonArmLength1-pistonArmLength2) + slack, Math.min(pistonArmLength1+pistonArmLength2 - slack, d));
+    let angle = Math.atan2(Y, Z);
+    let angle1 = -direction*Math.acos((pistonArmLength1*pistonArmLength1+d*d-pistonArmLength2*pistonArmLength2)/(2*pistonArmLength1*d)) + angle;
+    let angle2 = Math.PI - direction*Math.acos((pistonArmLength1*pistonArmLength1+pistonArmLength2*pistonArmLength2-d*d)/(2*pistonArmLength1*pistonArmLength2));
+    return [angle1, angle1 + angle2];
 }
 
 
-function forwardKinematics(originx, originy, angle1, angle2, L1, L2) {
-    let x1 = Math.cos(angle1)*L1;
-    let y1 = Math.sin(angle1)*L1;
-    let x2 = Math.cos(angle2)*L2 + x1;
-    let y2 = Math.sin(angle2)*L2 + y1;
-    return [[x1, y1], [x2, y2]];
+function forwardKinematics(originy, originz, angle1, angle2, L1) {
+    return vec4(pistonStart[0], Math.sin(angle1)*L1 + originy, -Math.cos(angle1)*L1 + originz, 0.0);
+}
+
+function handleCollisionsBetweenParticles() {
+    for (let i = 0; i < particles.length; i++) {
+        for (let j = i+1; j < particles.length; j++) {
+            let vec = subtract(particles[j].position, particles[i].position);
+            let mag = Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2) + Math.pow(vec[2], 2));
+            if (mag <= particleRadius*2) {
+                let newvec = normalize(vec);
+                particles[i].position[0] = particles[j].position[0] - newvec[0]*particleRadius*2;
+                particles[i].position[1] = particles[j].position[1] - newvec[1]*particleRadius*2;
+                particles[i].position[2] = particles[j].position[2] - newvec[2]*particleRadius*2;
+                particles[i].handleParticleCollisions(particles[j]);
+            }
+        }
+    }
 }
