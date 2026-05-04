@@ -27,12 +27,17 @@
         uniform bool flag;
 
         void main() {
-            vec4 worldPos = modelMatrix * vPosition;
+            vec4 worldPos;
+            if (flag) {
+                worldPos = (weights[0]*boneMatrix0+weights[1]*boneMatrix1+weights[2]*boneMatrix2+weights[3]*boneMatrix3) * vPosition;
+            } else {
+                worldPos = modelMatrix * vPosition;
+            }
             gl_Position = projMatrix * cameraMatrix * worldPos;
 
             fPosition = worldPos.xyz;
             fNormal = normalize(normalMatrix * vNormal);
-            fColor = vColor;			// Pass point color to fragment shader
+            fColor = vColor;
         }
     </script>
 

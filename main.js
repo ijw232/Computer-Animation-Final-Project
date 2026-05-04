@@ -122,6 +122,8 @@ let pistonArm2Buffers = {};
 let particleBuffers = {};
 let flagBuffers = {};
 let postBuffers = {};
+let wBuffer;
+let weights;
 
 class Point {
     constructor(pos, rot) {
@@ -635,42 +637,14 @@ function createFlag() {
         points.push(mix(flagKey[3], flagKey[2], i/flagSegments));
 
         genericQuad(0, 1,2, 3, points, flagColor, flagPoints, flagColors, flagNormals);
-        flagWeights.push(normalize(vec4(
-            1/Math.pow(i + slack, 2),
-            1/Math.pow(i - 1/3 + slack, 2),
-            1/Math.pow(i - 2/3 + slack, 2),
-            1/Math.pow(i - 1 + slack, 2)
-        )));
-        flagWeights.push(normalize(vec4(
-            1/Math.pow(i+1 + slack, 2),
-            1/Math.pow(i+1 - 1/3 + slack, 2),
-            1/Math.pow(i+1 - 2/3 + slack, 2),
-            1/Math.pow(i+1 - 1 + slack, 2)
-        )));
-        flagWeights.push(normalize(vec4(
-            1/Math.pow(i+1 + slack, 2),
-            1/Math.pow(i+1 - 1/3 + slack, 2),
-            1/Math.pow(i+1 - 2/3 + slack, 2),
-            1/Math.pow(i+1 - 1 + slack, 2)
-        )));
-        flagWeights.push(normalize(vec4(
-            1/Math.pow(i+1 + slack, 2),
-            1/Math.pow(i+1 - 1/3 + slack, 2),
-            1/Math.pow(i+1 - 2/3 + slack, 2),
-            1/Math.pow(i+1 - 1 + slack, 2)
-        )));
-        flagWeights.push(normalize(vec4(
-            1/Math.pow(i + slack, 2),
-            1/Math.pow(i - 1/3 + slack, 2),
-            1/Math.pow(i - 2/3 + slack, 2),
-            1/Math.pow(i - 1 + slack, 2)
-        )));
-        flagWeights.push(normalize(vec4(
-            1/Math.pow(i + slack, 2),
-            1/Math.pow(i - 1/3 + slack, 2),
-            1/Math.pow(i - 2/3 + slack, 2),
-            1/Math.pow(i - 1 + slack, 2)
-        )));
+        let wStart = getWeights(i / flagSegments);
+        let wEnd   = getWeights((i+1) / flagSegments);
+        flagWeights.push(wStart);
+        flagWeights.push(wEnd);
+        flagWeights.push(wEnd);
+        flagWeights.push(wEnd);
+        flagWeights.push(wStart);
+        flagWeights.push(wStart);
     }
 }
 
@@ -848,6 +822,9 @@ function main()
     particleBuffers = createBuffers(particlePoints, particleColors, particleNormals);
     postBuffers = createBuffers(postPoints, postColors, postNormals);
     flagBuffers = createBuffers(flagPoints, flagColors, flagNormals);
+    wBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, wBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(flagWeights), gl.STATIC_DRAW);
 
     const lightPosition = vec3(0.0, 15.0, 23.0);
     const eyePosition = vec3(0.0, 10.0, 23.0);
@@ -883,6 +860,8 @@ function main()
     );
 
     gl.uniform1i(gl.getUniformLocation(program, "flag"), 0);
+
+    weights = gl.getAttribLocation( program, "weights" );
 
     vPosition = gl.getAttribLocation( program, "vPosition" );
     gl.enableVertexAttribArray( vPosition );
@@ -1103,13 +1082,16 @@ function drawFlag() {
     gl.drawArrays(gl.TRIANGLES, 0, postPoints.length);
 
     gl.uniform1i(gl.getUniformLocation(program, "flag"), 1);
+    gl.enableVertexAttribArray(weights);
     setBoneMatrices();
     bindBuffers(flagBuffers);
-    modelMatrix = mat4();
+    gl.bindBuffer(gl.ARRAY_BUFFER, wBuffer);
+    gl.vertexAttribPointer(weights, 4, gl.FLOAT, false, 0, 0);
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
     setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, flagPoints.length);
     gl.uniform1i(gl.getUniformLocation(program, "flag"), 0);
+    gl.disableVertexAttribArray(weights);
 }
 
 // Helper function to generate spline points
@@ -1345,21 +1327,32 @@ function handleCollisionsBetweenParticles() {
 }
 
 function setBoneMatrices() {
-    theta += 1;
-    let A = 0.25;
-    let f = 0.5;
+    theta += 0.1;
+    let A = 0.75;
+    let f = 0.05;
     let boneMatrix0 = translate(0, 0, 0);
     let boneMatrix1 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 1));
     let boneMatrix2 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 2));
     let boneMatrix3 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 3));
+    console.log(boneMatrix1);
 
-    setUniformMatrix("boneMatrix0", boneMatrix0);
-    setUniformMatrix("boneMatrix1", boneMatrix1);
-    setUniformMatrix("boneMatrix2", boneMatrix2);
-    setUniformMatrix("boneMatrix3", boneMatrix3);
+    setUniformMatrix("boneMatrix0", boneMatrix3);
+    setUniformMatrix("boneMatrix1", boneMatrix2);
+    setUniformMatrix("boneMatrix2", boneMatrix1);
+    setUniformMatrix("boneMatrix3", boneMatrix0);
 }
 
 function setUniformMatrix(name, data) {
     let matrixLoc = gl.getUniformLocation(program, name);
     gl.uniformMatrix4fv(matrixLoc, false, flatten(data));
+}
+
+function getWeights(x) {
+    let w0 = Math.max(0, 1 - 3*x);
+    let w1 = Math.max(0, 1 - Math.abs(3*x - 1));
+    let w2 = Math.max(0, 1 - Math.abs(3*x - 2));
+    let w3 = Math.max(0, 3*x - 2);
+
+    let sum = w0 + w1 + w2 + w3;
+    return vec4(w0/sum, w1/sum, w2/sum, w3/sum);
 }
