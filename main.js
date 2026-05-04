@@ -58,6 +58,16 @@ const yUpperBound = yLowerBound + pistonHeadHeight;
 const zLowerBound = pistonStart[2] - pistonArmLength1;
 const zUpperBound = pistonStart[2] + pistonArmLength1;
 
+let flagPoints = [];
+let flagColors = [];
+let flagNormals = [];
+let postPoints = [];
+let postColors = [];
+let postNormals = [];
+const postColor = vec4(1.0, 1.0, 1.0, 1.0);
+const flagColor = vec4(1.0, 1.0, 1.0, 1.0);
+const flagSegments = 10;
+
 let cameraMatrix;
 let projMatrix;
 
@@ -107,6 +117,8 @@ let pistonHeadBuffers = {};
 let pistonArm1Buffers = {};
 let pistonArm2Buffers = {};
 let particleBuffers = {};
+let flagBuffers = {};
+let postBuffers = {};
 
 class Point {
     constructor(pos, rot) {
@@ -586,6 +598,42 @@ function createParticles() {
     }
 }
 
+function createFlag() {
+    const postKey = [
+        vec4(0.2, 7.0, -0.2, 1.0),
+        vec4(-0.2, 7.0, -0.2, 1.0),
+        vec4(0.2, 7.0, -0.2, 1.0),
+        vec4(0.2, 7.0, 0.2, 1.0),
+        vec4(0.2, 0.0, -0.2, 1.0),
+        vec4(-0.2, 0.0, -0.2, 1.0),
+        vec4(0.2, 0.0, -0.2, 1.0),
+        vec4(0.2, 0.0, 0.2, 1.0)
+    ]
+    const flagKey = [
+        vec4(3.2, 7.0, 0.0, 1.0),
+        vec4(0.2, 7.0, 0.0, 1.0),
+        vec4(0.2, 5.0, 0.0, 1.0),
+        vec4(3.2, 5.0, 0.0, 1.0)
+    ]
+
+    genericQuad(0, 1, 2, 3, postKey, postColor, postPoints, postColors, postNormals);
+    genericQuad(0, 4, 5, 1, postKey, postColor, postPoints, postColors, postNormals);
+    genericQuad(1, 5, 6, 2, postKey, postColor, postPoints, postColors, postNormals);
+    genericQuad(2, 6, 7, 3, postKey, postColor, postPoints, postColors, postNormals);
+    genericQuad(3, 7, 4, 0, postKey, postColor, postPoints, postColors, postNormals);
+    genericQuad(7, 6, 5, 4, postKey, postColor, postPoints, postColors, postNormals);
+
+    for (let i = 0; i < flagSegments; i++) {
+        let points = [];
+        points.push(mix(flagKey[0], flagKey[1], i/flagSegments));
+        points.push(mix(flagKey[0], flagKey[1], (i+1)/flagSegments));
+        points.push(mix(flagKey[2], flagKey[3], i/flagSegments));
+        points.push(mix(flagKey[2], flagKey[3], (i+1)/flagSegments));
+
+        genericQuad(0, 1,2, 3, points, flagColor, flagPoints, flagColors, flagNormals);
+    }
+}
+
 function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray, normalArray = null) {
     let normal = computeNormal(
         keyPoints[a],
@@ -685,6 +733,7 @@ function main()
     createCar();
     createPiston();
     createParticles();
+    createFlag();
 
     // Create Hierarchy
     body = new Body(mat4());
@@ -757,6 +806,8 @@ function main()
     pistonArm1Buffers = createBuffers(pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
     pistonArm2Buffers = createBuffers(pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
     particleBuffers = createBuffers(particlePoints, particleColors, particleNormals);
+    postBuffers = createBuffers(postPoints, postColors, postNormals);
+    flagBuffers = createBuffers(flagPoints, flagColors, flagNormals);
 
     const lightPosition = vec3(0.0, 15.0, 23.0);
     const eyePosition = vec3(0.0, 10.0, 23.0);
