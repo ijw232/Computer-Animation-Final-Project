@@ -27,10 +27,36 @@ let hoodColors = [];
 const bodyColor = vec4(1.0, 0.0, 0.0, 1.0);
 const windowColor = vec4(0.5, 1.0, 1.0, 1.0);
 const tireColor = vec4(0.1, 0.1, 0.1, 1.0);
+let carMatrix;
 
-let skyboxPoints = [];
-let skyboxColors = [];
-let skyboxColor = vec4(0.5, 1.0, 1.0, 1.0);
+let p = 0;
+const pistonColor = vec4(0.3, 0.3, 0.3, 1.0);
+const pistonStart = vec4(1.5, 0.8, 0.0, 1.0);
+let pistonEnd = vec4();
+const pistonArmLength1 = 0.1;
+const pistonArmLength2 = 0.2;
+const pistonArmWidth = 0.02;
+const pistonHeadHeight = 0.1;
+let pistonHeadPoints = [];
+let pistonHeadColors = [];
+let pistonArm1Points = [];
+let pistonArm1Colors = [];
+let pistonArm2Points = [];
+let pistonArm2Colors = [];
+
+const particleRadius = 0.01;
+const particleColor = vec4(1.0, 1.0, 1.0, 0.7);
+const particleSpeed = 0.5;
+const particleNum = 100;
+let particles = [];
+let particlePoints = [];
+let particleColors = [];
+const xLowerBound = pistonStart[0] - pistonArmLength1;
+const xUpperBound = pistonStart[0] + pistonArmLength1;
+const yLowerBound = pistonStart[1] + pistonArmLength1 + pistonArmLength2 + pistonHeadHeight
+const yUpperBound = yLowerBound + pistonHeadHeight;
+const zLowerBound = pistonStart[2] - pistonArmLength1;
+const zUpperBound = pistonStart[2] + pistonArmLength1;
 
 let cameraMatrix;
 let projMatrix;
@@ -472,24 +498,92 @@ function createCar() {
     }
 }
 
-function createSkybox() {
-    const skyboxKey = [
-        vec4(groundRadius, -1.0, -groundRadius, 1.0),
-        vec4(-groundRadius, -1.0, -groundRadius, 1.0),
-        vec4(-groundRadius, -1.0, groundRadius, 1.0),
-        vec4(groundRadius, -1.0, groundRadius, 1.0),
-        vec4(groundRadius, groundRadius, -groundRadius, 1.0),
-        vec4(-groundRadius, -groundRadius, -groundRadius, 1.0),
-        vec4(-groundRadius, -groundRadius, groundRadius, 1.0),
-        vec4(groundRadius, -groundRadius, groundRadius, 1.0)
+function createPiston() {
+    const pistonHead = [
+        vec4(pistonArmLength1, 0.0, -pistonArmLength1, 1.0),
+        vec4(pistonArmLength1, 0.0, pistonArmLength1, 1.0),
+        vec4(-pistonArmLength1, 0.0, pistonArmLength1, 1.0),
+        vec4(-pistonArmLength1, 0.0, -pistonArmLength1, 1.0),
+        vec4(pistonArmLength1, pistonHeadHeight, -pistonArmLength1, 1.0),
+        vec4(pistonArmLength1, pistonHeadHeight, pistonArmLength1, 1.0),
+        vec4(-pistonArmLength1, pistonHeadHeight, pistonArmLength1, 1.0),
+        vec4(-pistonArmLength1, pistonHeadHeight, -pistonArmLength1, 1.0)
+    ]
+    const pistonArm1 = [
+        vec4(pistonArmWidth, 0.0, -pistonArmWidth, 1.0),
+        vec4(pistonArmWidth, 0.0, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, 0.0, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, 0.0, -pistonArmWidth, 1.0),
+        vec4(pistonArmWidth, pistonArmLength1, -pistonArmWidth, 1.0),
+        vec4(pistonArmWidth, pistonArmLength1, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, pistonArmLength1, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, pistonArmLength1, -pistonArmWidth, 1.0)
+    ]
+    const pistonArm2 = [
+        vec4(pistonArmWidth, 0.0, -pistonArmWidth, 1.0),
+        vec4(pistonArmWidth, 0.0, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, 0.0, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, 0.0, -pistonArmWidth, 1.0),
+        vec4(pistonArmWidth, pistonArmLength2, -pistonArmWidth, 1.0),
+        vec4(pistonArmWidth, pistonArmLength2, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, pistonArmLength2, pistonArmWidth, 1.0),
+        vec4(-pistonArmWidth, pistonArmLength2, -pistonArmWidth, 1.0)
     ]
 
-    genericQuad(0, 1, 2, 3, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
-    genericQuad(0, 4, 7, 3, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
-    genericQuad(1, 5, 4, 0, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
-    genericQuad(2, 6, 5, 1, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
-    genericQuad(3, 7, 6, 2, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
-    genericQuad(4, 5, 6, 7, skyboxKey, skyboxColor, skyboxPoints, skyboxColors);
+    genericQuad(0, 1, 2, 3, pistonHead, pistonColor, pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+    genericQuad(0, 4, 5, 1, pistonHead, pistonColor, pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+    genericQuad(1, 5, 6, 2, pistonHead, pistonColor, pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+    genericQuad(2, 6, 7, 3, pistonHead, pistonColor, pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+    genericQuad(3, 7, 0, 4, pistonHead, pistonColor, pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+    genericQuad(7, 6, 5, 4, pistonHead, pistonColor, pistonHeadPoints, pistonHeadColors, pistonHeadNormals);
+
+    genericQuad(0, 1, 2, 3, pistonArm1, pistonColor, pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+    genericQuad(0, 4, 5, 1, pistonArm1, pistonColor, pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+    genericQuad(1, 5, 6, 2, pistonArm1, pistonColor, pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+    genericQuad(2, 6, 7, 3, pistonArm1, pistonColor, pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+    genericQuad(3, 7, 0, 4, pistonArm1, pistonColor, pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+    genericQuad(7, 6, 5, 4, pistonArm1, pistonColor, pistonArm1Points, pistonArm1Colors, pistonArm1Normals);
+
+    genericQuad(0, 1, 2, 3, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+    genericQuad(0, 4, 5, 1, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+    genericQuad(1, 5, 6, 2, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+    genericQuad(2, 6, 7, 3, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+    genericQuad(3, 7, 0, 4, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+    genericQuad(7, 6, 5, 4, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
+}
+
+function createParticles() {
+    const particleKey = [
+        vec4(particleRadius, particleRadius, -particleRadius, 1.0),
+        vec4(-particleRadius, particleRadius, -particleRadius, 1.0),
+        vec4(-particleRadius, particleRadius, particleRadius, 1.0),
+        vec4(particleRadius, particleRadius, particleRadius, 1.0),
+        vec4(particleRadius, -particleRadius, -particleRadius, 1.0),
+        vec4(-particleRadius, -particleRadius, -particleRadius, 1.0),
+        vec4(-particleRadius, -particleRadius, particleRadius, 1.0),
+        vec4(particleRadius, -particleRadius, particleRadius, 1.0)
+    ]
+
+    genericQuad(0, 1, 2, 3, particleKey, particleColor, particlePoints, particleColors, particleNormals);
+    genericQuad(0, 4, 5, 1, particleKey, particleColor, particlePoints, particleColors, particleNormals);
+    genericQuad(1, 5, 6, 2, particleKey, particleColor, particlePoints, particleColors, particleNormals);
+    genericQuad(2, 6, 7, 3, particleKey, particleColor, particlePoints, particleColors, particleNormals);
+    genericQuad(3, 7, 4, 0, particleKey, particleColor, particlePoints, particleColors, particleNormals);
+    genericQuad(7, 6, 5, 4, particleKey, particleColor, particlePoints, particleColors, particleNormals);
+
+    for (let i = 0; i < particleNum; i++) {
+        let position = vec3(
+            Math.random() * (xUpperBound - xLowerBound) + xLowerBound,
+            Math.random() * (yUpperBound - yLowerBound) + yLowerBound,
+            Math.random() * (zUpperBound - zLowerBound) + zLowerBound
+        );
+        let velocity = vec3(
+            (Math.random() - 0.5) * particleSpeed,
+            (Math.random() - 0.5) * particleSpeed,
+            (Math.random() - 0.5) * particleSpeed,
+        )
+        particles.push(new Particle(position, velocity));
+    }
 }
 
 function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray, normalArray = null) {
@@ -589,6 +683,8 @@ function main()
     createGround();
     createRoad();
     createCar();
+    createPiston();
+    createParticles();
 
     // Create Hierarchy
     body = new Body(mat4());
