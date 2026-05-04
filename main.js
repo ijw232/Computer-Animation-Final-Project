@@ -1052,14 +1052,6 @@ function drawPiston() {
     gl.drawArrays(gl.TRIANGLES, 0, pistonHeadPoints.length);
 }
 
-function drawSkybox() {
-    loadVectors(skyboxPoints, skyboxColors);
-    let modelMatrix = mat4();
-    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
-    setNormalMatrix(modelMatrix);
-    gl.drawArrays(gl.TRIANGLES, 0, skyboxPoints.length);
-}
-
 // Helper function to generate spline points
 function generateSplines() {
     catmull = [];
