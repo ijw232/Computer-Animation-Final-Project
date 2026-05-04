@@ -108,6 +108,8 @@ let pistonArm1Normals = [];
 let pistonArm2Normals = [];
 let particleNormals = [];
 
+let theta = 0;
+
 let birdBuffers = {};
 let wingBuffers = {};
 let carBuffers = {};
@@ -842,6 +844,8 @@ function main()
         50.0
     );
 
+    gl.uniform1i(gl.getUniformLocation(program, "flag"), 0);
+
     vPosition = gl.getAttribLocation( program, "vPosition" );
     gl.enableVertexAttribArray( vPosition );
     modelMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
@@ -905,6 +909,7 @@ function render() {
         p.update(dt);
         p.render();
     }
+    drawFlag();
     requestAnimFrame(render);
 }
 
@@ -1050,6 +1055,23 @@ function drawPiston() {
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
     setNormalMatrix(modelMatrix);
     gl.drawArrays(gl.TRIANGLES, 0, pistonHeadPoints.length);
+}
+
+function drawFlag() {
+    bindBuffers(postBuffers);
+    let modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, postPoints.length);
+
+    gl.uniform1i(gl.getUniformLocation(program, "flag"), 1);
+    setBoneMatrices();
+    bindBuffers(flagBuffers);
+    modelMatrix = mat4();
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
+    setNormalMatrix(modelMatrix);
+    gl.drawArrays(gl.TRIANGLES, 0, flagPoints.length);
+    gl.uniform1i(gl.getUniformLocation(program, "flag"), 0);
 }
 
 // Helper function to generate spline points
@@ -1282,4 +1304,24 @@ function handleCollisionsBetweenParticles() {
             }
         }
     }
+}
+
+function setBoneMatrices() {
+    theta += 1;
+    let A = 0.25;
+    let f = 0.5;
+    let boneMatrix0 = translate(0, 0, 0);
+    let boneMatrix1 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 1));
+    let boneMatrix2 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 2));
+    let boneMatrix3 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 3));
+
+    setUniformMatrix("boneMatrix0", boneMatrix0);
+    setUniformMatrix("boneMatrix1", boneMatrix1);
+    setUniformMatrix("boneMatrix2", boneMatrix2);
+    setUniformMatrix("boneMatrix3", boneMatrix3);
+}
+
+function setUniformMatrix(name, data) {
+    let matrixLoc = gl.getUniformLocation(program, name);
+    gl.uniformMatrix4fv(matrixLoc, false, flatten(data));
 }

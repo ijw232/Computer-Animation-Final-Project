@@ -18,6 +18,14 @@
         varying vec3 fPosition;
         varying vec4 fColor;
 
+        attribute vec4 weights;
+        uniform mat4 boneMatrix0;
+        uniform mat4 boneMatrix1;
+        uniform mat4 boneMatrix2;
+        uniform mat4 boneMatrix3;
+
+        uniform bool flag;
+
         void main() {
             vec4 worldPos = modelMatrix * vPosition;
             gl_Position = projMatrix * cameraMatrix * worldPos;
