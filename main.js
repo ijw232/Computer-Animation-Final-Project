@@ -908,7 +908,7 @@ function drawCar() {
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(carMatrix));
 
     if (carFollow) {
-        cameraMatrix = lookAt(vec3(mult(carMatrix, vec4(4.0, 2.0, -7.0, 0.0))), vec3(point.x, point.y, point.z), vec3(0.0, 1.0, 0.0));
+        cameraMatrix = lookAt(vec3(mult(carMatrix, vec4(4.0, 2.0, 0.0, 1.0))), vec3(point.x, point.y, point.z), vec3(0.0, 1.0, 0.0));
         let cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
         gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
     } else {
