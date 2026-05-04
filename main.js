@@ -64,7 +64,7 @@ let flagNormals = [];
 let postPoints = [];
 let postColors = [];
 let postNormals = [];
-const postColor = vec4(1.0, 1.0, 1.0, 1.0);
+const postColor = vec4(0.4, 0.2, 0.1, 1.0);
 const flagColor = vec4(1.0, 1.0, 1.0, 1.0);
 const flagSegments = 10;
 
@@ -627,8 +627,8 @@ function createFlag() {
         let points = [];
         points.push(mix(flagKey[0], flagKey[1], i/flagSegments));
         points.push(mix(flagKey[0], flagKey[1], (i+1)/flagSegments));
-        points.push(mix(flagKey[2], flagKey[3], i/flagSegments));
-        points.push(mix(flagKey[2], flagKey[3], (i+1)/flagSegments));
+        points.push(mix(flagKey[3], flagKey[2], (i+1)/flagSegments));
+        points.push(mix(flagKey[3], flagKey[2], i/flagSegments));
 
         genericQuad(0, 1,2, 3, points, flagColor, flagPoints, flagColors, flagNormals);
     }
