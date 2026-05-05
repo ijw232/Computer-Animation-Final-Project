@@ -1,0 +1,25 @@
+Ian Wood and Sean Peacock
+
+We have created a simple scene with a car driving in circles around a flag.
+You can change the camera to look at the interior of the car, which has a piston.
+
+1. Both the car and the bird follow a spline path.
+2. The car and bird also use quaternions and SLERPing to rotate on their path.
+3. The flag uses shape deformation to creat the wave effect.
+4. The flag also uses bones for its deformation.
+5. The piston uses hierarchical modeling and inverse kinematics.
+6. The particles have velocity and experience elastic collisions with each other and the walls/piston.
+7. We use particles with the piston.
+8. We don't have obstacle avoidance.
+
+Additional Instructions:
+Press "c" to swap between the 2 cameras.
+
+We struggled to get the piston to work. It has a lot of moving parts,
+and we were not using the angles from our inverse kinematics function properly at first.
+
+Sean was responsible for all of the object creating, the spline following, and the quaternions.
+Ian was responsible for the flag shape deformation with bones, the lighting, and the particles.
+We worked collaboratively on all of the drawing of the objects, as well as the creation of the piston.
+
+We did not use AI or resources outside of class materials.

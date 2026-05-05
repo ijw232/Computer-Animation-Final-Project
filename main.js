@@ -1,3 +1,4 @@
+//Ian Wood and Sean Peacock
 let program;
 let gl;
 
@@ -1282,7 +1283,7 @@ function handleCollisionsBetweenParticles() {
 function setBoneMatrices() {
     theta += 0.1;
     let A = 0.75;
-    let f = 0.05;
+    let f = 0.1;
     let boneMatrix0 = translate(0, 0, 0);
     let boneMatrix1 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 1));
     let boneMatrix2 = translate(0, 0, A * Math.sin(2.0 * Math.PI * f * theta + 2));
