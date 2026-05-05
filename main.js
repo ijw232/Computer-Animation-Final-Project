@@ -610,7 +610,6 @@ function createFlag() {
 
     for (let i = 0; i < flagSegments; i++) {
         let points = [];
-        const slack = 0.00001;
         points.push(mix(flagKey[0], flagKey[1], i/flagSegments));
         points.push(mix(flagKey[0], flagKey[1], (i+1)/flagSegments));
         points.push(mix(flagKey[3], flagKey[2], (i+1)/flagSegments));
