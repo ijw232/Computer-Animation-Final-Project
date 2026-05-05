@@ -1,17 +1,20 @@
 let program;
 let gl;
 
+// Bird variables
 let pointsArray = [];
 let wings = [];
 let body;
 let animatedArray = [];
 let colorsArray =[];
 
+// Ground Variables
 let groundPoints = [];
 const groundColor = vec4(0.0, 0.7, 0.0, 1.0);
 const groundColors = [groundColor, groundColor, groundColor, groundColor, groundColor, groundColor]
 const groundRadius = 20;
 
+// Road Variables
 let roadPoints = [];
 const roadColor = vec4(0.3, 0.3, 0.3, 1.0);
 let roadColors = [];
@@ -20,6 +23,7 @@ const roadInnerRadius = 6;
 const roadQuality = 50;
 const roadElevation = 0.01;
 
+// Car Variables, Hood is unused
 let carPoints= [];
 let hoodPoints = [];
 let carColors = [];
@@ -29,6 +33,7 @@ const windowColor = vec4(0.5, 1.0, 1.0, 1.0);
 const tireColor = vec4(0.1, 0.1, 0.1, 1.0);
 let carMatrix;
 
+// Piston Variables
 let p = 0;
 const pistonColor = vec4(0.3, 0.3, 0.3, 1.0);
 const pistonStart = vec4(1.5, 0.8, 0.0, 1.0);
@@ -44,6 +49,7 @@ let pistonArm1Colors = [];
 let pistonArm2Points = [];
 let pistonArm2Colors = [];
 
+// Particle Variaables
 const particleRadius = 0.01;
 const particleColor = vec4(1.0, 1.0, 1.0, 0.7);
 const particleSpeed = 0.5;
@@ -51,6 +57,8 @@ const particleNum = 100;
 let particles = [];
 let particlePoints = [];
 let particleColors = [];
+
+// Particle collision space
 const xLowerBound = pistonStart[0] - pistonArmLength1;
 const xUpperBound = pistonStart[0] + pistonArmLength1;
 const yLowerBound = pistonStart[1] + pistonArmLength1 + pistonArmLength2 + pistonHeadHeight
@@ -58,6 +66,7 @@ const yUpperBound = yLowerBound + pistonHeadHeight;
 const zLowerBound = pistonStart[2] - pistonArmLength1;
 const zUpperBound = pistonStart[2] + pistonArmLength1;
 
+// Flag Variables
 let flagPoints = [];
 let flagColors = [];
 let flagNormals = [];
@@ -69,6 +78,7 @@ const flagColor = vec4(1.0, 1.0, 1.0, 1.0);
 const flagSegments = 10;
 let flagWeights = [];
 
+// Generic globals
 let cameraMatrix;
 let projMatrix;
 
@@ -79,6 +89,7 @@ let vPosition;
 let vColor;
 let modelMatrixLoc;
 
+// Bird movement
 const birdSegments = 125;
 let birdt = 0;
 let birdl = 0;
@@ -89,6 +100,7 @@ let currentSpline = 0;
 const numParts = 3;
 const flapAngle = 10;
 
+// Car movement
 const carSegments = 225;
 let cart = 0;
 let carl = 0;
@@ -96,6 +108,7 @@ let carAlpha = 0;
 let carControlPoint = 0;
 let carFollow = false;
 
+// Normals
 let normalsArray = [];
 let vNormal;
 
@@ -110,6 +123,7 @@ let particleNormals = [];
 
 let theta = 0;
 
+// Buffers
 let birdBuffers = {};
 let wingBuffers = {};
 let carBuffers = {};
@@ -124,6 +138,7 @@ let postBuffers = {};
 let wBuffer;
 let weights;
 
+// Spline classes
 class Point {
     constructor(pos, rot) {
         this.x = pos[0];
@@ -141,6 +156,7 @@ class Spline {
     }
 }
 
+// Particle Class
 class Particle {
     constructor(position, velocity) {
         this.position = position;
@@ -320,6 +336,7 @@ function wing(a, b, c, d) {
     }
 }
 
+// Vertex creation functions, initializes point, color, and normal arrays for each object in the scene
 function createGround() {
     let normal = vec3(0.0, 1.0, 0.0);
 
@@ -384,6 +401,7 @@ function createRoad() {
 }
 
 function createCar() {
+    // Car Body
     const carKeyPoints = [
         vec4(2.0, 0.5, -1.0, 1.0),
         vec4(-2.0, 0.5, -1.0, 1.0),
@@ -419,6 +437,7 @@ function createCar() {
     genericQuad(11, 15, 14, 10, carKeyPoints, windowColor, carPoints, carColors, carNormals);
     genericQuad(12, 13, 14, 15, carKeyPoints, bodyColor, carPoints, carColors, carNormals);
 
+    // Car Wheels
     const degrees = 2 * Math.PI/50;
 
     for (let j = 0; j < 4; j++) {
@@ -549,6 +568,7 @@ function createPiston() {
     genericQuad(7, 6, 5, 4, pistonArm2, pistonColor, pistonArm2Points, pistonArm2Colors, pistonArm2Normals);
 }
 
+// Draws base particle and initializes all the particle objects.
 function createParticles() {
     const particleKey = [
         vec4(particleRadius, particleRadius, -particleRadius, 1.0),
@@ -608,6 +628,7 @@ function createFlag() {
     genericQuad(3, 7, 4, 0, postKey, postColor, postPoints, postColors, postNormals);
     genericQuad(7, 6, 5, 4, postKey, postColor, postPoints, postColors, postNormals);
 
+    // Draws flag segments and gives weights to each segment
     for (let i = 0; i < flagSegments; i++) {
         let points = [];
         points.push(mix(flagKey[0], flagKey[1], i/flagSegments));
@@ -627,6 +648,7 @@ function createFlag() {
     }
 }
 
+// Generic helper function for drawing quads
 function genericQuad(a, b, c, d, keyPoints, color, pointArray, colorArray, normalArray = null) {
     let normal = computeNormal(
         keyPoints[a],
@@ -718,7 +740,7 @@ function main()
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
 
-    // Create cubes
+    // Create objects
     colorCube();
     makeWings();
     createGround();
@@ -774,6 +796,7 @@ function main()
         new Point([-5.3, 0, -5.3], [0, -360, 0]),
         new Point([0, 0, -7.5], [0, -405, 0])]);
 
+    // Initialize variables
     splines.push(birdSpline);
     splines.push(carSpline);
     birdt = 0;
@@ -786,6 +809,7 @@ function main()
     carControlPoint = 0;
     generateSplines();
 
+    // Initialize buffers
     birdBuffers = createBuffers(animatedArray, colorsArray, normalsArray);
     wingBuffers = createBuffers(
         wings,
@@ -808,6 +832,7 @@ function main()
     const lightPosition = vec3(0.0, 15.0, 23.0);
     const eyePosition = vec3(0.0, 10.0, 23.0);
 
+    // Set gl attributes
     gl.uniform3fv(
         gl.getUniformLocation(program, "lightPosition"),
         flatten(lightPosition)
@@ -868,6 +893,7 @@ function main()
     render();
 }
 
+// Keyboard handler
 function cameraSwitch(e) {
     if (e.key === "c") carFollow = !carFollow;
 }
@@ -1188,6 +1214,7 @@ function setNormalMatrix(modelMatrix) {
     );
 }
 
+// Buffer Helper functions
 function createBuffers(points, colors, normals) {
     let buffers = {};
 
