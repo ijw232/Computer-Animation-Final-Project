@@ -74,7 +74,6 @@ let projMatrix;
 
 let splines = [];
 let catmull = [];
-let bSpline = [];
 
 let vPosition;
 let vColor;
@@ -140,25 +139,6 @@ class Spline {
     constructor(points) {
         this.points = points;
     }
-
-    print() {
-        console.log(this.points);
-    }
-
-    draw() {
-        for (let i = 0; i < this.points.length; i++) {
-            let point = this.points[i];
-            let x = point.x;
-            let y = point.y;
-            let z = point.z;
-
-            let modelMatrix = translate(parseFloat(x), parseFloat(y), parseFloat(z));
-            gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
-
-            setNormalMatrix(modelMatrix);
-            gl.drawArrays(gl.TRIANGLES, 0, pointsArray.length);
-        }
-    }
 }
 
 class Particle {
@@ -173,7 +153,7 @@ class Particle {
     }
 
     /**
-     *  Handles collisions between this particle and the four walls
+     *  Handles collisions between this particle and the six walls
      */
     handleWallCollisions() {
         if (this.position[0] > pistonEnd[0] + pistonArmLength1 - particleRadius) {
@@ -215,7 +195,7 @@ class Particle {
         p.velocity = subtract(p.velocity, vn);
     }
 
-    // Draw particle as a point
+    // Draws the particle as a cube
     render() {
         bindBuffers(particleBuffers);
         let modelMatrix = translate(this.position[0], this.position[1], this.position[2]);
@@ -930,6 +910,7 @@ function render() {
     requestAnimFrame(render);
 }
 
+//All of the following draw functions draw an object in the scene
 function drawBird() {
     birdt += 1;
     birdl += 1;
@@ -1019,16 +1000,6 @@ function drawWings(parentMatrix, wing, direction = 1) {
     }
 }
 
-// Draw small cubes at control points
-function drawControlPoints() {
-    loadVectors(pointsArray, colorsArray);
-
-
-    for (let i = 0; i < splines.length; i++) {
-        splines[i].draw();
-    }
-}
-
 function drawGround() {
     bindBuffers(groundBuffers);
     let modelMatrix = mat4();
@@ -1097,13 +1068,10 @@ function drawFlag() {
 // Helper function to generate spline points
 function generateSplines() {
     catmull = [];
-    bSpline = [];
     let spline = splines[0];
     catmull.push(generateCatmullRomCurve(spline.points, birdSegments));
-    bSpline.push(generateBSpline(spline.points, birdSegments));
     spline = splines[1];
     catmull.push(generateCatmullRomCurve(spline.points, carSegments));
-    bSpline.push(generateBSpline(spline.points, carSegments));
 }
 
 function generateCatmullRomCurve(points, segments) {
@@ -1127,30 +1095,6 @@ function generateCatmullRomCurve(points, segments) {
         }
     }
     return curve;
-}
-
-function generateBSpline(points, segments) {
-    let curve = [];
-    let M = [vec4(-1.0, 3.0, -3.0, 1.0),
-        vec4(3.0, -6.0, 3.0, 0.0),
-        vec4(-3.0, 0.0, 3.0, 0.0),
-        vec4(1.0, 4.0, 1.0, 0.0)];
-    for(let j = 1; j < points.length - 2; j++) {
-        let X = [points[j-1].x, points[j].x, points[j+1].x, points[j+2].x];
-        let Y = [points[j-1].y, points[j].y, points[j+1].y, points[j+2].y];
-        let Z = [points[j-1].z, points[j].z, points[j+1].z, points[j+2].z];
-        for (let i = 0; i <= segments; i++) {
-            let U = vec4((i / segments)**3, (i / segments)**2, i / segments, 1);
-
-            let x = multiply(X, M, U)/6;
-            let y = multiply(Y, M, U)/6;
-            let z = multiply(Z, M, U)/6;
-
-            curve.push(new Point([x, y, z], [points[j].xRot, points[j].yRot, points[j].zRot]));
-        }
-    }
-    return curve;
-
 }
 
 // Multiply matrices for splines
@@ -1228,27 +1172,7 @@ function quatToMatrix(q) {
     );
 }
 
-function loadVectors(points, colors = null, normals = null) {
-    let vBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
-    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
-
-    if (colors !== null) {
-        let cBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
-    }
-
-    if(normals !== null) {
-        let nBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW);
-        gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
-    }
-}
-
+//Calculate the normal vectors to use for the lighting
 function computeNormal(a, b, c) {
     let t1 = subtract(b, a);
     let t2 = subtract(c, a);
@@ -1294,6 +1218,7 @@ function bindBuffers(buffers) {
     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
 }
 
+//Outputs the angles for the piston arms
 function inverseKinematics(Y, Z) {
     let direction = Math.sign(Math.PI-p);
     let slack = .000001
@@ -1305,11 +1230,12 @@ function inverseKinematics(Y, Z) {
     return [angle1, angle1 + angle2];
 }
 
-
+//Outputs the position of the middle joint of the piston
 function forwardKinematics(originy, originz, angle1, angle2, L1) {
     return vec4(pistonStart[0], Math.sin(angle1)*L1 + originy, -Math.cos(angle1)*L1 + originz, 0.0);
 }
 
+//Detects when to particles collide
 function handleCollisionsBetweenParticles() {
     for (let i = 0; i < particles.length; i++) {
         for (let j = i+1; j < particles.length; j++) {
@@ -1326,6 +1252,7 @@ function handleCollisionsBetweenParticles() {
     }
 }
 
+//Sets the bones of the flag using a sin wave
 function setBoneMatrices() {
     theta += 0.1;
     let A = 0.75;
@@ -1347,6 +1274,7 @@ function setUniformMatrix(name, data) {
     gl.uniformMatrix4fv(matrixLoc, false, flatten(data));
 }
 
+//Gets weights for the segments using a linear scale
 function getWeights(x) {
     let w0 = Math.max(0, 1 - 3*x);
     let w1 = Math.max(0, 1 - Math.abs(3*x - 1));
